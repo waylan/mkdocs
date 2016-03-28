@@ -2,8 +2,9 @@ require([
     base_url + '/mkdocs/js/mustache.min.js',
     base_url + '/mkdocs/js/lunr.min.js',
     'text!search-results-template.mustache',
+    'text!../search_data.json',
     'text!../search_index.json',
-], function (Mustache, lunr, results_template, data) {
+], function (Mustache, lunr, results_template, data, indexDump) {
    "use strict";
 
     function getSearchTerm()
@@ -19,25 +20,46 @@ require([
             }
         }
     }
+    
+    function isEmptyObject(obj)
+    {
+      // See http://stackoverflow.com/a/34491287/866026
+      for (var x in obj) { return false; }
+      return true;
+    }
 
-    var index = lunr(function () {
-        this.field('title', {boost: 10});
-        this.field('text');
-        this.ref('location');
-    });
-
+    indexDump = JSON.parse(indexDump);
     data = JSON.parse(data);
     var documents = {};
-
-    for (var i=0; i < data.docs.length; i++){
+    
+    if (! isEmptyObject(indexDump)) {
+      // Load prebuilt index
+      console.debug('Loading pre-built index...');
+      var index = lunr.Index.load(indexDump);
+      
+      for (var i=0; i < data.docs.length; i++){
+        var doc = data.docs[i];
+        documents[doc.location] = doc;
+      }
+    } else {
+      // No prebuilt index. create it
+      console.debug('Building index...');
+      var index = lunr(function () {
+         this.field('title', {boost: 10});
+         this.field('text');
+         this.ref('location');
+      });
+      
+      for (var i=0; i < data.docs.length; i++){
         var doc = data.docs[i];
         doc.location = base_url + doc.location;
         index.add(doc);
         documents[doc.location] = doc;
+      }
     }
 
-    var search = function(){
-
+    var search = function()
+    {
         var query = document.getElementById('mkdocs-search-query').value;
         var search_results = document.getElementById("mkdocs-search-results");
         while (search_results.firstChild) {
