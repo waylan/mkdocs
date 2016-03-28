@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
+import os
 import json
+import execjs
 from mkdocs import utils
 
 try:                                    # pragma: no cover
@@ -90,7 +92,35 @@ class SearchIndex(object):
         page_dicts = {
             'docs': self._entries,
         }
-        return json.dumps(page_dicts, sort_keys=True, indent=4)
+
+        lunr_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'assets/search/mkdocs/js/lunr.min.js'
+        )
+        
+        js = """
+        var lunr = require("%s");
+ 
+        var build_index = function(data){
+            var index = lunr(function () {
+                this.field('title', {boost: 10});
+                this.field('text');
+                this.ref('location');
+            });
+
+            var data = JSON.parse(data);
+
+            for (var i=0; i < data.docs.length; i++){
+                var doc = data.docs[i];
+                index.add(doc);
+            };
+
+            return JSON.stringify(index);
+        };
+        """ % lunr_path
+        
+        runtime = execjs.compile(js)
+        return runtime.call('build_index', json.dumps(page_dicts, sort_keys=True))
 
     def strip_tags(self, html):
         """strip html tags from data"""
