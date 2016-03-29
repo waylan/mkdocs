@@ -99,7 +99,7 @@ class SearchIndex(object):
         lunr_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             'assets/search/mkdocs/js/lunr.min.js'
-        )
+        ).replace('\\', '/')
         
         js = """
         var lunr = require("%s");
