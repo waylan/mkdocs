@@ -2,8 +2,9 @@ require([
     base_url + '/mkdocs/js/mustache.min.js',
     base_url + '/mkdocs/js/lunr.min.js',
     'text!search-results-template.mustache',
+    'text!../search_data.json',
     'text!../search_index.json',
-], function (Mustache, lunr, results_template, data) {
+], function (Mustache, lunr, results_template, data, indexDump) {
    "use strict";
 
     function getSearchTerm()
@@ -20,20 +21,16 @@ require([
         }
     }
 
-    var index = lunr(function () {
-        this.field('title', {boost: 10});
-        this.field('text');
-        this.ref('location');
-    });
+    var index = lunr.Index.load(JSON.parse(indexDump));
 
     data = JSON.parse(data);
     var documents = {};
 
     for (var i=0; i < data.docs.length; i++){
         var doc = data.docs[i];
+        var id = doc.location;
         doc.location = base_url + doc.location;
-        index.add(doc);
-        documents[doc.location] = doc;
+        documents[id] = doc;
     }
 
     var search = function(){
