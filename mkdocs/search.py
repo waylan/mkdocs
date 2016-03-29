@@ -87,12 +87,15 @@ class SearchIndex(object):
                 loc=abs_url + toc_item.url
             )
 
-    def generate_search_index(self):
-        """python to json conversion"""
+    def generate_search_data(self):
+        """python to json data conversion"""
         page_dicts = {
             'docs': self._entries,
         }
+        return json.dumps(page_dicts, sort_keys=True, indent=4)
 
+    def generate_search_index(self):
+        """generate pre-built lunr.js search index"""
         lunr_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             'assets/search/mkdocs/js/lunr.min.js'
@@ -120,7 +123,7 @@ class SearchIndex(object):
         """ % lunr_path
         
         runtime = execjs.compile(js)
-        return runtime.call('build_index', json.dumps(page_dicts, sort_keys=True))
+        return runtime.call('build_index', self.generate_search_data())
 
     def strip_tags(self, html):
         """strip html tags from data"""
