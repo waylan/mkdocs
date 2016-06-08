@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 import os
 import json
+import sys
+import logging
 import execjs
 from mkdocs import utils
 
@@ -9,6 +11,9 @@ try:                                    # pragma: no cover
     from html.parser import HTMLParser  # noqa
 except ImportError:                     # pragma: no cover
     from HTMLParser import HTMLParser   # noqa
+
+
+log = logging.getLogger(__name__)
 
 
 class SearchIndex(object):
@@ -121,9 +126,18 @@ class SearchIndex(object):
             return JSON.stringify(index);
         };
         """ % lunr_path
-        
-        runtime = execjs.compile(js)
-        return runtime.call('build_index', self.generate_search_data())
+
+        try:
+            runtime = execjs.get()
+            log.info("Using '%s' JavaScript runtime to build search index.", runtime.name)
+            context = runtime.compile(js)
+            return context.call('build_index', self.generate_search_data())
+        except execjs.Error as e:
+            log.debug(
+                'Skipped building search index. Failed with %s: "%s"',
+                e.__class__.__name__, e.message
+            )
+            return None
 
     def strip_tags(self, html):
         """strip html tags from data"""

@@ -21,7 +21,18 @@ require([
         }
     }
 
-    var index = lunr.Index.load(JSON.parse(indexDump));
+    if (typeof indexDump !== 'undefined') {
+      // Load prebuilt index
+      var index = lunr.Index.load(JSON.parse(indexDump));
+    } else {
+      // No prebuilt index. create it
+      var index = lunr(function () {
+         this.field('title', {boost: 10});
+         this.field('text');
+         this.ref('location');
+      });
+    }
+    
 
     data = JSON.parse(data);
     var documents = {};
@@ -30,6 +41,10 @@ require([
         var doc = data.docs[i];
         var id = doc.location;
         doc.location = base_url + doc.location;
+        if (typeof indexDump == 'undefined') {
+         // No prebuilt index. Add to index.
+          index.add(doc);
+        }
         documents[id] = doc;
     }
 
