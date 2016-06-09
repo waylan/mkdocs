@@ -20,36 +20,46 @@ require([
             }
         }
     }
+    
+    function isEmptyObject(obj)
+    {
+      // See http://stackoverflow.com/a/34491287/866026
+      for (var x in obj) { return false; }
+      return true;
+    }
 
-    if (typeof indexDump !== 'undefined') {
+    indexDump = JSON.parse(indexDump);
+    data = JSON.parse(data);
+    var documents = {};
+    
+    if (! isEmptyObject(indexDump)) {
       // Load prebuilt index
-      var index = lunr.Index.load(JSON.parse(indexDump));
+      console.debug('Loading pre-built index...');
+      var index = lunr.Index.load(indexDump);
+      
+      for (var i=0; i < data.docs.length; i++){
+        var doc = data.docs[i];
+        documents[doc.location] = doc;
+      }
     } else {
       // No prebuilt index. create it
+      console.debug('Building index...');
       var index = lunr(function () {
          this.field('title', {boost: 10});
          this.field('text');
          this.ref('location');
       });
-    }
-    
-
-    data = JSON.parse(data);
-    var documents = {};
-
-    for (var i=0; i < data.docs.length; i++){
+      
+      for (var i=0; i < data.docs.length; i++){
         var doc = data.docs[i];
-        var id = doc.location;
         doc.location = base_url + doc.location;
-        if (typeof indexDump == 'undefined') {
-         // No prebuilt index. Add to index.
-          index.add(doc);
-        }
-        documents[id] = doc;
+        index.add(doc);
+        documents[doc.location] = doc;
+      }
     }
 
-    var search = function(){
-
+    var search = function()
+    {
         var query = document.getElementById('mkdocs-search-query').value;
         var search_results = document.getElementById("mkdocs-search-results");
         while (search_results.firstChild) {

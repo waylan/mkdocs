@@ -137,7 +137,8 @@ class SearchIndex(object):
                 'Skipped building search index. Failed with %s: "%s"',
                 e.__class__.__name__, e.message
             )
-            return None
+            # Return an empty JSON object.
+            return '{}'
 
     def strip_tags(self, html):
         """strip html tags from data"""

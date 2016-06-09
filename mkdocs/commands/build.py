@@ -314,11 +314,10 @@ def build_pages(config, dump_json=False):
     search_data_path = os.path.join(config['site_dir'], 'mkdocs', 'search_data.json')
     utils.write_file(search_data.encode('utf-8'), search_data_path)
     
+    log.debug('Building search_index.json')
     search_index = search_index.generate_search_index()
-    if search_index is not None:
-        log.debug('Building search_index.json')
-        search_index_path = os.path.join(config['site_dir'], 'mkdocs', 'search_index.json')
-        utils.write_file(search_index.encode('utf-8'), search_index_path)
+    search_index_path = os.path.join(config['site_dir'], 'mkdocs', 'search_index.json')
+    utils.write_file(search_index.encode('utf-8'), search_index_path)
 
 
 def build(config, live_server=False, dump_json=False, clean_site_dir=False):
