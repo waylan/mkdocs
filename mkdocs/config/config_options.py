@@ -1,7 +1,8 @@
 from __future__ import unicode_literals
 import os
+from collections import OrderedDict
 
-from mkdocs import utils, legacy
+from mkdocs import utils, legacy, plugins
 from mkdocs.config.base import Config, ValidationError
 
 
@@ -540,3 +541,51 @@ class MarkdownExtensions(OptionallyRequired):
 
     def post_validation(self, config, key_name):
         config[self.configkey] = self.configdata
+
+
+class Plugins(OptionallyRequired):
+    """
+    Plugins config option.
+    
+    A list of plugins. If a plugin defines config options those are used when
+    initializing the plugin class.
+    """
+
+    def __init__(self, **kwargs):
+        super(MarkdownExtensions, self).__init__(**kwargs)
+        self.installed_plugins = plugins.get_plugins()
+
+    def run_validation(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise ValidationError('Invalid Plugins configuration. Expected a list of plugins')
+        plugins = OrderedDict()
+        for item in value:
+            if isinstance(item, dict):
+                if len(item) > 1:
+                    raise ValidationError('Invalid Plugins configuration')
+                name, cfg = item.popitem()
+                cfg = cfg or {} # Users may define a null (None) config
+                if not isinstance(cfg, dict):
+                    raise ValidationError('Invalid config options for '
+                                          'the "{0}" plugin.'.format(name))
+                plugins[name] = self.load_plugin(name, cfg)
+            elif isinstance(item, utils.string_types):
+                plugins[item] = self.load_plugin(item, {})
+            else:
+                raise ValidationError('Invalid Plugins configuration')
+        return plugins
+    
+    def load_plugin(self, name, config):
+        if name in self.installed_plugins:
+            Plugin = self.installed_plugins[name].load()
+            if issubclass(Plugin, plugins.BasePlugin):
+                return Plugin(config)
+            else:
+                raise ValidationError('{0}.{1} must be a subclass of '
+                                      '{2}.{3}'.format(Plugin.__module__,
+                                                       Plugin.__name__,
+                                                       plugins.BasePlugin.__module__,
+                                                       plugins.BasePlugin.__name__))
+        else:
+            raise ValidationError('The "{0}" plugin is not installed'.format(name))
+        
