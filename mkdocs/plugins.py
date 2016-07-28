@@ -8,8 +8,12 @@ Implements the plugin API for MkDocs.
 from __future__ import unicode_literals
 
 import pkg_resources
-from mkdocs inport exceptions
-from mkdocs.config import Config
+import logging
+
+from mkdocs.config.base import Config, ValidationError
+
+
+log = logging.getLogger('mkdocs.plugins')
 
 
 def get_plugins():
@@ -18,19 +22,6 @@ def get_plugins():
     plugins = pkg_resources.iter_entry_points(group='mkdocs.plugins')
 
     return dict((plugin.name, plugin) for plugin in plugins)
-
-
-def get_plugin_names():
-    """ Return an iterable of all installed plugin names. """
-
-    return get_plugins().keys()
-
-
-def get_plugin(name):
-    """ Return a Plugin class of the given name. """
-
-    # TODO: perhaps add some error handling here for pretty error messages
-    return get_plugins()[name].load()
 
 
 class BasePlugin(object):
@@ -49,7 +40,7 @@ class BasePlugin(object):
     def __init__(self, options):
         self._load_config(options)
 
-    def _load_config(options):
+    def _load_config(self, options):
         """ Load config from a dict of options. """
 
         self.config = Config(schema=self.config_scheme)
@@ -57,13 +48,12 @@ class BasePlugin(object):
 
         errors, warnings = self.config.validate()
 
+        # This is a nested config, so raise the errors to be caught by the parent config
         for config_name, warning in warnings:
-            log.warning("Config value: '%s'. Warning: %s", config_name, warning)
+            # TODO: perhaps do something different with warnings
+            log.warning("Plugin value: '%s'. Warning: %s", config_name, warning)
 
         for config_name, error in errors:
-            log.error("Config value: '%s'. Error: %s", config_name, error)
+            raise ValidationError("Plugin value: '%s'. Error: %s", config_name, error)
 
-        if len(errors) > 0:
-            raise exceptions.ConfigurationError(
-                "Aborted with {0} Configuration Errors!".format(len(errors))
-            )
+

@@ -546,13 +546,13 @@ class MarkdownExtensions(OptionallyRequired):
 class Plugins(OptionallyRequired):
     """
     Plugins config option.
-    
+
     A list of plugins. If a plugin defines config options those are used when
     initializing the plugin class.
     """
 
     def __init__(self, **kwargs):
-        super(MarkdownExtensions, self).__init__(**kwargs)
+        super(Plugins, self).__init__(**kwargs)
         self.installed_plugins = plugins.get_plugins()
 
     def run_validation(self, value):
@@ -574,7 +574,7 @@ class Plugins(OptionallyRequired):
             else:
                 raise ValidationError('Invalid Plugins configuration')
         return plugins
-    
+
     def load_plugin(self, name, config):
         if name in self.installed_plugins:
             Plugin = self.installed_plugins[name].load()
@@ -588,4 +588,3 @@ class Plugins(OptionallyRequired):
                                                        plugins.BasePlugin.__name__))
         else:
             raise ValidationError('The "{0}" plugin is not installed'.format(name))
-        
