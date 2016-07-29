@@ -579,7 +579,12 @@ class Plugins(OptionallyRequired):
         if name in self.installed_plugins:
             Plugin = self.installed_plugins[name].load()
             if issubclass(Plugin, plugins.BasePlugin):
-                return Plugin(config)
+                plugin = Plugin()
+                errors, warnings = plugin.load_config(config)
+                self.warnings.extend(warnings)
+                for cfg_name, error in errors:
+                    raise ValidationError("Plugin value: '%s'. Error: %s", cfg_name, error)
+                return plugin
             else:
                 raise ValidationError('{0}.{1} must be a subclass of '
                                       '{2}.{3}'.format(Plugin.__module__,

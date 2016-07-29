@@ -31,15 +31,29 @@ class TestPluginClass(unittest.TestCase):
             'bar': 0
         }
 
-        plugin = DummyPlugin(options)
+        plugin = DummyPlugin()
+        errors, warnings = plugin.load_config(options)
         self.assertEqual(plugin.config, expected)
+        self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
 
     def test_invalid_plugin_options(self):
 
-        self.assertRaises(config.base.ValidationError, DummyPlugin, {'foo': 42})
-        self.assertRaises(config.base.ValidationError, DummyPlugin, {'bar': 'a string'})
-        # TODO: fix this... The error in the nested config is not being properly passed up
-        #self.assertRaises(config.base.ValidationError, DummyPlugin, {'invalid_key': 'value'})
+        plugin = DummyPlugin()
+        errors, warnings = plugin.load_config({'foo': 42})
+        self.assertEqual(len(errors), 1)
+        self.assertIn('foo', errors[0])
+        self.assertEqual(warnings, [])
+
+        errors, warnings = plugin.load_config({'bar': 'a string'})
+        self.assertEqual(len(errors), 1)
+        self.assertIn('bar', errors[0])
+        self.assertEqual(warnings, [])
+
+        errors, warnings = plugin.load_config({'invalid_key': 'value'})
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('invalid_key', warnings[0])
 
 
 MockEntryPoint = mock.Mock()
