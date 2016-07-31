@@ -17,6 +17,10 @@ class DummyPlugin(plugins.BasePlugin):
         ('bar', config.config_options.Type(int, default=0))
     )
 
+    def on_pre_page(self, content, **kwargs):
+        """ prepend `foo` config value to page content. """
+        return ' '.join((self.config['foo'], content))
+
 
 class TestPluginClass(unittest.TestCase):
 
@@ -56,6 +60,49 @@ class TestPluginClass(unittest.TestCase):
         self.assertIn('invalid_key', warnings[0])
 
 
+class TestPluginCollection(unittest.TestCase):
+
+    def test_set_plugin_on_collection(self):
+        collection = plugins.PluginCollection()
+        plugin = DummyPlugin()
+        collection['foo'] = plugin
+        self.assertEqual(collection.items(), [('foo', plugin)])
+
+    def test_set_multiple_plugins_on_collection(self):
+        collection = plugins.PluginCollection()
+        plugin1 = DummyPlugin()
+        collection['foo'] = plugin1
+        plugin2 = DummyPlugin()
+        collection['bar'] = plugin2
+        self.assertEqual(collection.items(), [('foo', plugin1), ('bar', plugin2)])
+
+    def test_run_event_on_collection(self):
+        collection = plugins.PluginCollection()
+        plugin = DummyPlugin()
+        plugin.load_config({'foo': 'new'})
+        collection['foo'] = plugin
+        self.assertEqual(collection.run_event('pre_page', 'page content'), 'new page content')
+
+    def test_run_event_twice_on_collection(self):
+        collection = plugins.PluginCollection()
+        plugin1 = DummyPlugin()
+        plugin1.load_config({'foo': 'new'})
+        collection['foo'] = plugin1
+        plugin2 = DummyPlugin()
+        plugin2.load_config({'foo': 'second'})
+        collection['bar'] = plugin2
+        self.assertEqual(collection.run_event('pre_page', 'page content'),
+                         'second new page content')
+
+    def test_run_undefined_event_on_collection(self):
+        collection = plugins.PluginCollection()
+        self.assertEqual(collection.run_event('pre_page', 'page content'), 'page content')
+
+    def test_run_unknown_event_on_collection(self):
+        collection = plugins.PluginCollection()
+        self.assertRaises(KeyError, collection.run_event, 'unknown', 'page content')
+
+
 MockEntryPoint = mock.Mock()
 MockEntryPoint.configure_mock(**{'name': 'sample', 'load.return_value': DummyPlugin})
 
@@ -69,6 +116,7 @@ class TestPluginConfig(unittest.TestCase):
         option = config.config_options.Plugins()
         cfg['plugins'] = option.validate(cfg['plugins'])
 
+        self.assertIsInstance(cfg['plugins'], plugins.PluginCollection)
         self.assertIn('sample', cfg['plugins'])
         self.assertIsInstance(cfg['plugins']['sample'], plugins.BasePlugin)
         expected = {
@@ -90,6 +138,7 @@ class TestPluginConfig(unittest.TestCase):
         option = config.config_options.Plugins()
         cfg['plugins'] = option.validate(cfg['plugins'])
 
+        self.assertIsInstance(cfg['plugins'], plugins.PluginCollection)
         self.assertIn('sample', cfg['plugins'])
         self.assertIsInstance(cfg['plugins']['sample'], plugins.BasePlugin)
         expected = {

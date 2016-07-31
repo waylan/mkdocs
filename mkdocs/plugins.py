@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import pkg_resources
 import logging
+from collections import OrderedDict
 
 from mkdocs.config.base import Config, ValidationError
 
@@ -41,3 +42,51 @@ class BasePlugin(object):
         self.config.load_dict(options)
 
         return self.config.validate()
+
+
+class PluginCollection(OrderedDict):
+    """
+    A collection of plugins.
+
+    In addition to being a dict of Plugin instances, each event method is registered
+    upon being added. All registered methods for a given event can then be run in order
+    by calling `run_event`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(PluginCollection, self).__init__(*args, **kwargs)
+        self. events = {
+            'config': [],
+            'nav': [],
+            'pre_page': []
+        }
+
+    def _register_event(self, event_name, method):
+        """ Register a method for an event. """
+        self.events[event_name].append(method)
+
+    def __setitem__(self, key, value, **kwargs):
+        if not isinstance(value, BasePlugin):
+            raise TypeError('{0}.{1} only accepts values which are instances'
+                            ' of {3}.{4} sublcasses'.format(self.__module__,
+                                                            self.__name__,
+                                                            BasePlugin.__module__,
+                                                            BasePlugin.__name__))
+        super(PluginCollection, self).__setitem__(key, value, **kwargs)
+        # Register all of the event methods defined for this Plugin.
+        for event_name in dir(value):
+            if event_name.startswith('on_'):
+                self._register_event(event_name[3:], getattr(value, event_name))
+
+    def run_event(self, name, item, **kwargs):
+        """
+        Run all registered methods of an event.
+
+        `item` is the object to be modified and returned by the event method.
+        All other keywords are variables for context, but would not generally
+        be modified by the event method.
+        """
+
+        for method in self.events[name]:
+            item = method(item, **kwargs)
+        return item

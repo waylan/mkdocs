@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 import os
-from collections import OrderedDict
 
 from mkdocs import utils, legacy, plugins
 from mkdocs.config.base import Config, ValidationError
@@ -558,7 +557,7 @@ class Plugins(OptionallyRequired):
     def run_validation(self, value):
         if not isinstance(value, (list, tuple)):
             raise ValidationError('Invalid Plugins configuration. Expected a list of plugins')
-        plugins = OrderedDict()
+        plgins = plugins.PluginCollection()
         for item in value:
             if isinstance(item, dict):
                 if len(item) > 1:
@@ -568,12 +567,12 @@ class Plugins(OptionallyRequired):
                 if not isinstance(cfg, dict):
                     raise ValidationError('Invalid config options for '
                                           'the "{0}" plugin.'.format(name))
-                plugins[name] = self.load_plugin(name, cfg)
+                plgins[name] = self.load_plugin(name, cfg)
             elif isinstance(item, utils.string_types):
-                plugins[item] = self.load_plugin(item, {})
+                plgins[item] = self.load_plugin(item, {})
             else:
                 raise ValidationError('Invalid Plugins configuration')
-        return plugins
+        return plgins
 
     def load_plugin(self, name, config):
         if name in self.installed_plugins:
@@ -583,6 +582,7 @@ class Plugins(OptionallyRequired):
                 errors, warnings = plugin.load_config(config)
                 self.warnings.extend(warnings)
                 for cfg_name, error in errors:
+                    # TODO: retain all errors of there are more than one
                     raise ValidationError("Plugin value: '%s'. Error: %s", cfg_name, error)
                 return plugin
             else:
