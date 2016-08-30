@@ -9,10 +9,54 @@ from mkdocs.config import load_config
 log = logging.getLogger(__name__)
 
 
+def _get_error_handler():
+    """
+    Return an ErrorHandler which returns user provided error pages.
+    
+    Thanks to @jehiah for the code: https://gist.github.com/jehiah/398252
+    
+    """
+    
+    # Importing here to seperate the code paths from static_server and livereload
+    from tornado.web import RequestHandler
+
+    class ErrorHandler(RequestHandler):
+        """ Generates an error response with status_code for all requests. """
+
+        def __init__(self, application, request, status_code):
+            tornado.web.RequestHandler.__init__(self, application, request)
+            self.set_status(status_code)
+        
+        def get_error_html(self, status_code, **kwargs):
+            self.require_setting("static_path")
+            if status_code in [404, 500, 503, 403]:
+                filename = os.path.join(self.settings['static_path'], '%d.html' % status_code)
+                if os.path.exists(filename):
+                    f = open(filename, 'r')
+                    data = f.read()
+                    f.close()
+                    return data
+            return "<html><title>%(code)d: %(message)s</title>" \
+                    "<body class='bodyErrorPage'>%(code)d: %(message)s</body></html>" % {
+                "code": status_code,
+                "message": httplib.responses[status_code],
+            }
+        
+        def prepare(self):
+            raise tornado.web.HTTPError(self._status_code)
+
+    return ErrorHandler
+
+
 def _livereload(host, port, config, builder, site_dir):
 
     # We are importing here for anyone that has issues with livereload. Even if
     # this fails, the --no-livereload alternative should still work.
+
+    # Monkey patch tornado ErrorHandler as LiveReload offers no way to override.
+    from tornado import web
+    web.ErrorHandler = _get_error_handler()
+    
     from livereload import Server
 
     server = Server()
@@ -33,13 +77,18 @@ def _static_server(host, port, site_dir):
     # alternative.
     from tornado import ioloop
     from tornado import web
+    
+    settings = {
+        'default_handler_class': _get_error_handler(),
+        'static_path': site_dir
+    }
 
     application = web.Application([
         (r"/(.*)", web.StaticFileHandler, {
             "path": site_dir,
             "default_filename": "index.html"
         }),
-    ])
+    ], settings=settings)
     application.listen(port=int(port), address=host)
 
     log.info('Running at: http://%s:%s/', host, port)
