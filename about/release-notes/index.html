@@ -119,7 +119,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://github.com/waylan/mkdocs/">
+                        <a href="https://github.com/mkdocs/mkdocs/">
                                 <i class="fa fa-github"></i>GitHub
                         </a>
                     </li>
@@ -174,17 +174,13 @@ mkdocs, version 0.15.2
 <h2 id="version-016-2016-02-">Version 0.16 (2016-02-??)<a class="headerlink" href="#version-016-2016-02-" title="Permanent link"></a></h2>
 <h3 id="major-additions-to-version-0160">Major Additions to Version 0.16.0<a class="headerlink" href="#major-additions-to-version-0160" title="Permanent link"></a></h3>
 <h4 id="template-variables-refactored-874">Template variables refactored. (#874)<a class="headerlink" href="#template-variables-refactored-874" title="Permanent link"></a></h4>
+<h5 id="page-context">Page Context<a class="headerlink" href="#page-context" title="Permanent link"></a></h5>
 <p>Page specific variable names in the template context have been refactored as
 defined in <a href="../../user-guide/custom-themes/#page">Custom Themes</a>. The
 old variable names will issue a warning but continue to work for version 0.16,
 but may be removed in a future version.</p>
-<p>No global variables were altered except <code>page_description</code>. Previously
-its value was altered programicaly based on whether the current
-page was the homepage. Now it simply maps to <code>config['site_description']</code>.
-Use <code>page.is_homepage</code> in the template to conditionally change the
-description.</p>
-<p>Any of the following old variables should be updated to the new ones in user
-created and third-party templates:</p>
+<p>Any of the following old page variables should be updated to the new ones in
+user created and third-party templates:</p>
 <table>
 <thead>
 <tr>
@@ -227,6 +223,99 @@ created and third-party templates:</p>
 </tr>
 </tbody>
 </table>
+<h5 id="global-context">Global Context<a class="headerlink" href="#global-context" title="Permanent link"></a></h5>
+<p>Additionally, a number of global variables have been altered and/or deprecated
+and user created and third-party templates should be updated as outlined below:</p>
+<p>Previously, the global variable <code>include_nav</code> was altered programmatically based
+on the number of pages in the nav. The variable will issue a warning but
+continue to work for version 0.16, but may be removed in a future version. Use
+<code>{% if nav|length&gt;1 %}</code> instead.</p>
+<p>Previously, the global variable <code>include_next_prev</code> was altered programmatically
+based on the number of pages in the nav. The variable will issue a warning but
+continue to work for version 0.16, but may be removed in a future version. Use
+<code>{% if page.next_page or page.previous_page %}</code> instead.</p>
+<p>Previously the global variable <code>page_description</code> was altered programmatically
+based on whether the current page was the homepage. Now it simply maps to
+<code>config['site_description']</code>. Use <code>{% if page.is_homepage %}</code> in the template to
+conditionally change the description.</p>
+<p>The global variable <code>homepage_url</code> maps directly to <code>nav.homepage.url</code> and is
+being deprecated. The variable will issue a warning but continue to work for
+version 0.16, but may be removed in a future version. Use <code>nav.homepage.url</code>
+instead.</p>
+<p>The global variable <code>favicon</code> maps to the configuration setting <code>site_favicon</code>.
+Both the template variable and the configuration setting are being deprecated
+and will issue a warning but continue to work for version 0.16, and may be
+removed in a future version. Use <code>{{ base_url }}/img/favicon.ico</code> in your
+template instead. Users can simply save a copy of their custom favicon icon to
+<code>img/favicon.ico</code> in either their <code>docs_dir</code> or <code>theme_dir</code>.</p>
+<p>A number of variables map directly to similarly named variables in the <code>config</code>.
+Those variables are being deprecated and will issue a warning but continue to
+work for version 0.16, but may be removed in a future version. Use
+<code>config.var_name</code> instead, where <code>var_name</code> is the name of one of the
+<a href="../../user-guide/configuration/">configuration</a> variables.</p>
+<p>Below is a summary of all of the changes made to the global context:</p>
+<table>
+<thead>
+<tr>
+<th>Old Variable Name</th>
+<th>New Variable Name or Expression</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>current_page</td>
+<td>page</td>
+</tr>
+<tr>
+<td>include_nav</td>
+<td>nav&#124;length&gt;1</td>
+</tr>
+<tr>
+<td>include_next_prev</td>
+<td>(page.next_page or page.previous_page)</td>
+</tr>
+<tr>
+<td>site_name</td>
+<td>config.site_name</td>
+</tr>
+<tr>
+<td>site_author</td>
+<td>config.site_author</td>
+</tr>
+<tr>
+<td>page_description</td>
+<td>config.site_description</td>
+</tr>
+<tr>
+<td>repo_url</td>
+<td>config.repo_url</td>
+</tr>
+<tr>
+<td>repo_name</td>
+<td>config.repo_name</td>
+</tr>
+<tr>
+<td>site_url</td>
+<td>config.site_url</td>
+</tr>
+<tr>
+<td>copyright</td>
+<td>config.copyright</td>
+</tr>
+<tr>
+<td>google_analytics</td>
+<td>config.google_analytics</td>
+</tr>
+<tr>
+<td>homepage_url</td>
+<td>nav.homepage.url</td>
+</tr>
+<tr>
+<td>favicon</td>
+<td>{{ base_url }}/img/favicon.ico</td>
+</tr>
+</tbody>
+</table>
 <h4 id="increased-template-customization-607">Increased Template Customization. (#607)<a class="headerlink" href="#increased-template-customization-607" title="Permanent link"></a></h4>
 <p>The built-in themes have been updated by having each of their many parts wrapped
 in template blocks which allow each individual block to be easily overridden
@@ -264,8 +353,8 @@ the <code>extra_css</code> or <code>extra_javascript</code> config settings goin
 <h4 id="support-for-dirty-builds-990">Support for dirty builds. (#990)<a class="headerlink" href="#support-for-dirty-builds-990" title="Permanent link"></a></h4>
 <p>For large sites the build time required to create the pages can become problematic,
 thus a "dirty" build mode was created. This mode simply compares the modified time
-of the generated html and source markdown. If the markdown has changed since the
-html then the page is re-constructed. Otherwise, the page remains as is. This mode
+of the generated HTML and source markdown. If the markdown has changed since the
+HTML then the page is re-constructed. Otherwise, the page remains as is. This mode
 may be invoked in both the <code>mkdocs serve</code> and <code>mkdocs build</code> commands:</p>
 <pre><code class="text">mkdocs serve --dirtyreload
 </code></pre>
@@ -294,7 +383,7 @@ better conform with the documented <a href="../../user-guide/writing-your-docs/#
 <li>Fixed issues with Unicode file names under Windows and Python 2. (#833)</li>
 <li>Improved the styling of in-line code in the MkDocs theme. (#718)</li>
 <li>Bugfix: convert variables to JSON when being passed to JavaScript (#850)</li>
-<li>Updated the ReadTheDocs theme to match the upstream font sizes and colours
+<li>Updated the ReadTheDocs theme to match the upstream font sizes and colors
   more closely. (#857)</li>
 <li>Fixes an issue with permalink markers showing when the mouse was far above
   them (#843)</li>
@@ -312,6 +401,11 @@ better conform with the documented <a href="../../user-guide/writing-your-docs/#
   (#738).</li>
 <li>Add a <code>--force</code> flag to the <code>gh-deploy</code> command to force the push to the
   repository (#973).</li>
+<li>Improve alignment for current selected menu item in readthedocs theme (#888).</li>
+<li><code>http://user.github.io/repo</code> =&gt; <code>https://user.github.io/repo/</code> (#1029).</li>
+<li>Improve installation instructions (#1028).</li>
+<li>Account for wide tables and consistently wrap inline code spans (#834).</li>
+<li>Bugfix: Use absolute URLs in nav &amp; media links from error templates (#77).</li>
 </ul>
 <h2 id="version-0153-2016-02-18">Version 0.15.3 (2016-02-18)<a class="headerlink" href="#version-0153-2016-02-18" title="Permanent link"></a></h2>
 <ul>

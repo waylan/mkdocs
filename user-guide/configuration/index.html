@@ -119,7 +119,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://github.com/waylan/mkdocs/">
+                        <a href="https://github.com/mkdocs/mkdocs/">
                                 <i class="fa fa-github"></i>GitHub
                         </a>
                     </li>
@@ -210,13 +210,6 @@ anonymous access. E.g. <code>blob/master/docs/</code></p>
 <p>Set the name of the author. This will add a meta tag to the generated HTML
 header.</p>
 <p><strong>default</strong>: <code>null</code></p>
-<h3 id="site_favicon">site_favicon<a class="headerlink" href="#site_favicon" title="Permanent link"></a></h3>
-<p>Set the favicon to use. Putting a <code>favicon.ico</code> into the <code>docs/</code> directory, the
-config would look as follows:</p>
-<pre><code class="yaml">site_favicon: favicon.ico
-</code></pre>
-
-<p><strong>default</strong>: <code>null</code></p>
 <h3 id="copyright">copyright<a class="headerlink" href="#copyright" title="Permanent link"></a></h3>
 <p>Set the copyright information to be included in the documentation by the theme.</p>
 <p><strong>default</strong>: <code>null</code></p>
@@ -246,9 +239,8 @@ and About pages, given the three source files <code>index.md</code>, <code>user-
     - 'About': 'about.md'
 </code></pre>
 
-<p>See the section on <a href="../writing-your-docs/#configure-pages-and-navigation">configuring pages and
-navigation</a> for
-a more detailed breakdown, including how to create sub-sections.</p>
+<p>See the section on <a href="../writing-your-docs/#configure-pages-and-navigation">configuring pages and navigation</a> for a more detailed
+breakdown, including how to create sub-sections.</p>
 <p><strong>default</strong>: By default <code>pages</code> will contain an alphanumerically sorted, nested
 list of all the Markdown files found within the <code>docs_dir</code> and its
 sub-directories. If none are found it will be <code>[]</code> (an empty list).</p>
@@ -261,10 +253,10 @@ sub-directories. If none are found it will be <code>[]</code> (an empty list).</
 <p>Lets you set a directory to a custom theme. This can either be a relative
 directory, in which case it is resolved relative to the directory containing
 your configuration file, or it can be an absolute directory path.</p>
-<p>See <a href="../styling-your-docs/#using-the-theme_dir">styling your docs</a> for details if
-you would like to tweak an existing theme.</p>
-<p>See <a href="../custom-themes">custom themes</a> if you would like to build your own theme
-from the ground up.</p>
+<p>See <a href="../styling-your-docs/#using-the-theme_dir">styling your docs</a> for details if you would like to tweak an
+existing theme.</p>
+<p>See <a href="../custom-themes/">custom themes</a> if you would like to build your own theme from the ground
+up.</p>
 <p><strong>default</strong>: <code>null</code></p>
 <h3 id="docs_dir">docs_dir<a class="headerlink" href="#docs_dir" title="Permanent link"></a></h3>
 <p>Lets you set the directory containing the documentation source markdown files.
@@ -305,8 +297,8 @@ See the example in <a href="#extra_css">extra_css</a> for usage.</p>
 <p><strong>default</strong>: <code>[]</code> (an empty list).</p>
 <h3 id="extra_templates">extra_templates<a class="headerlink" href="#extra_templates" title="Permanent link"></a></h3>
 <p>Set a list of templates in your <code>docs_dir</code> to be built by MkDocs. To see more
-about writing templates for MkDocs read the documentation about <a href="../styling-your-docs/#custom-themes">custom themes</a>
-and specifically the section about the <a href="../styling-your-docs/#global-context">variables that are available</a> to
+about writing templates for MkDocs read the documentation about <a href="../custom-themes/">custom themes</a>
+and specifically the section about the <a href="../custom-themes/#template-variables">variables that are available</a> to
 templates. See the example in <a href="#extra_css">extra_css</a> for usage.</p>
 <p><strong>default</strong>: <code>[]</code> (an empty list).</p>
 <h3 id="extra">extra<a class="headerlink" href="#extra" title="Permanent link"></a></h3>
@@ -380,8 +372,8 @@ useful, for example:</p>
 <p><strong>default</strong>: <code>'127.0.0.1:8000'</code></p>
 <h2 id="formatting-options">Formatting options<a class="headerlink" href="#formatting-options" title="Permanent link"></a></h2>
 <h3 id="markdown_extensions">markdown_extensions<a class="headerlink" href="#markdown_extensions" title="Permanent link"></a></h3>
-<p>MkDocs uses the <a href="http://pythonhosted.org/Markdown/">Python Markdown</a> library to translate Markdown files
-into HTML. Python Markdown supports a variety of <a href="http://pythonhosted.org/Markdown/extensions/index.html">extensions</a>
+<p>MkDocs uses the <a href="https://pythonhosted.org/Markdown/">Python Markdown</a> library to translate Markdown files
+into HTML. Python Markdown supports a variety of <a href="https://pythonhosted.org/Markdown/extensions/index.html">extensions</a>
 that customize how pages are formatted. This setting lets you enable a list of
 extensions beyond the ones that MkDocs uses by default (<code>meta</code>, <code>toc</code>, <code>tables</code>,
 and <code>fenced_code</code>).</p>

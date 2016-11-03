@@ -119,7 +119,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://github.com/waylan/mkdocs/">
+                        <a href="https://github.com/mkdocs/mkdocs/">
                                 <i class="fa fa-github"></i>GitHub
                         </a>
                     </li>
@@ -202,7 +202,7 @@ existing theme.</p>
 </code></pre>
 
 <p>Article content from each page specified in <code>mkdocs.yml</code> is inserted using the
-<code>{{ content }}</code> tag. Stylesheets and scripts can be brought into this theme as
+<code>{{ content }}</code> tag. Style-sheets and scripts can be brought into this theme as
 with a normal HTML file. Navbars and tables of contents can also be generated
 and included automatically, through the <code>nav</code> and <code>toc</code> objects, respectively.
 If you wish to write your own theme, it is recommended to start with one of
@@ -211,9 +211,9 @@ the <a href="https://github.com/mkdocs/mkdocs/tree/master/mkdocs/themes">built-i
 <p class="admonition-title">Note</p>
 <p>As MkDocs uses <a href="http://jinja.pocoo.org/">Jinja</a> as its template engine, you have access to all the
 power of Jinja, including <a href="http://jinja.pocoo.org/docs/dev/templates/#template-inheritance">template inheritance</a>. You may notice that the
-themes included with MkDocs make extensive use of template inheritance anf
+themes included with MkDocs make extensive use of template inheritance and
 blocks, allowing users to easily override small bits and pieces of the
-templates from the <a href="../styling-your-docs/#using-the-theme_dir">theme_dir</a>. Therefore, the builtin themes are
+templates from the <a href="../styling-your-docs/#using-the-theme_dir">theme_dir</a>. Therefore, the built-in themes are
 implemented in a <code>base.html</code> file, which <code>main.html</code> extends. Although not
 required, third party template authors are encouraged to follow a similar
 pattern and may want to define the same <a href="../styling-your-docs/#overriding-template-blocks">blocks</a> as are used in the built-in
@@ -227,116 +227,50 @@ the global context or with a page specific context. The global context is used
 for HTML pages that don't represent an individual Markdown document, for
 example a 404.html page or search.html.</p>
 <h3 id="global-context">Global Context<a class="headerlink" href="#global-context" title="Permanent link"></a></h3>
-<p>The following variables in the context map directly the <a href="../configuration/">configuration options
-</a>.</p>
-<table>
-<thead>
-<tr>
-<th>Variable Name</th>
-<th>Configuration name</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>site_name</td>
-<td><a href="../configuration/#site_name">site_name</a></td>
-<td></td>
-</tr>
-<tr>
-<td>site_author</td>
-<td><a href="../configuration/#site_author">site_author</a></td>
-<td></td>
-</tr>
-<tr>
-<td>favicon</td>
-<td><a href="../configuration/#site_favicon">site_favicon</a></td>
-<td></td>
-</tr>
-<tr>
-<td>page_description</td>
-<td><a href="../configuration/#site_description">site_description</a></td>
-<td></td>
-</tr>
-<tr>
-<td>repo_url</td>
-<td><a href="../configuration/#repo_url">repo_url</a></td>
-<td></td>
-</tr>
-<tr>
-<td>repo_name</td>
-<td><a href="../configuration/#repo_name">repo_name</a></td>
-<td></td>
-</tr>
-<tr>
-<td>site_url</td>
-<td><a href="../configuration/#site_url">site_url</a></td>
-<td></td>
-</tr>
-<tr>
-<td>extra_css</td>
-<td><a href="../configuration/#extra_css">extra_css</a></td>
-<td></td>
-</tr>
-<tr>
-<td>extra_javascript</td>
-<td><a href="../configuration/#extra_javascript">extra_javascript</a></td>
-<td></td>
-</tr>
-<tr>
-<td>extra</td>
-<td><a href="../configuration/#extra">extra</a></td>
-<td></td>
-</tr>
-<tr>
-<td>include_nav</td>
-<td><a href="../configuration/#include_nav">include_nav</a></td>
-<td></td>
-</tr>
-<tr>
-<td>include_next_prev</td>
-<td><a href="../configuration/#include_next_prev">include_next_prev</a></td>
-<td></td>
-</tr>
-<tr>
-<td>copyright</td>
-<td><a href="../configuration/#copyright">copyright</a></td>
-<td></td>
-</tr>
-<tr>
-<td>google_analytics</td>
-<td><a href="../configuration/#google_analytics">google_analytics</a></td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>The following variables provide information about the navigation and location.</p>
+<p>The following variables are available globally on any template.</p>
+<h4 id="config">config<a class="headerlink" href="#config" title="Permanent link"></a></h4>
+<p>The <code>config</code> variable is an instance of MkDocs' config object generated from the
+<code>mkdocs.yml</code> config file. While you can use any config option, some commonly
+used options include:</p>
+<ul>
+<li><a href="../configuration/#site_name">config.site_name</a></li>
+<li><a href="../configuration/#site_url">config.site_url</a></li>
+<li><a href="../configuration/#site_author">config.site_author</a></li>
+<li><a href="../configuration/#site_description">config.site_description</a></li>
+<li><a href="../configuration/#repo_url">config.repo_url</a></li>
+<li><a href="../configuration/#repo_name">config.repo_name</a></li>
+<li><a href="../configuration/#copyright">config.copyright</a></li>
+<li><a href="../configuration/#google_analytics">config.google_analytics</a></li>
+</ul>
 <h4 id="nav">nav<a class="headerlink" href="#nav" title="Permanent link"></a></h4>
 <p>The <code>nav</code> variable is used to create the navigation for the documentation.
 Following is a basic usage example which outputs the first and second level
 navigation as a nested list.</p>
-<pre><code class="django">&lt;ul&gt;
-  {% for nav_item in nav %}
-      {% if nav_item.children %}
-          &lt;li&gt;{{ nav_item.title }}
-              &lt;ul&gt;
-              {% for nav_item in nav_item.children %}
-                  &lt;li class=&quot;{% if nav_item.active%}current{%endif%}&quot;&gt;
-                      &lt;a href=&quot;{{ nav_item.url }}&quot;&gt;{{ nav_item.title }}&lt;/a&gt;
-                  &lt;/li&gt;
-              {% endfor %}
-              &lt;/ul&gt;
-          &lt;/li&gt;
-      {% else %}
-          &lt;li class=&quot;{% if nav_item.active%}current{%endif%}&quot;&gt;
-              &lt;a href=&quot;{{ nav_item.url }}&quot;&gt;{{ nav_item.title }}&lt;/a&gt;
-          &lt;/li&gt;
-      {% endif %}
-
-  {% endfor %}
-&lt;/ul&gt;
+<pre><code class="django">{% if nav|length&gt;1 %}
+    &lt;ul&gt;
+    {% for nav_item in nav %}
+        {% if nav_item.children %}
+            &lt;li&gt;{{ nav_item.title }}
+                &lt;ul&gt;
+                {% for nav_item in nav_item.children %}
+                    &lt;li class=&quot;{% if nav_item.active%}current{%endif%}&quot;&gt;
+                        &lt;a href=&quot;{{ nav_item.url }}&quot;&gt;{{ nav_item.title }}&lt;/a&gt;
+                    &lt;/li&gt;
+                {% endfor %}
+                &lt;/ul&gt;
+            &lt;/li&gt;
+        {% else %}
+            &lt;li class=&quot;{% if nav_item.active%}current{%endif%}&quot;&gt;
+                &lt;a href=&quot;{{ nav_item.url }}&quot;&gt;{{ nav_item.title }}&lt;/a&gt;
+            &lt;/li&gt;
+        {% endif %}
+    {% endfor %}
+    &lt;/ul&gt;
+{% endif %}
 </code></pre>
 
+<p>The <code>nav</code> object also contains a <code>hompage</code> object, which points to the <code>page</code>
+object of the homepage. For example, you may want to access <code>nav.homepage.url</code>.</p>
 <h4 id="base_url">base_url<a class="headerlink" href="#base_url" title="Permanent link"></a></h4>
 <p>The <code>base_url</code> provides a relative path to the root of the MkDocs project.
 This makes it easy to include links to static assets in your theme. For
@@ -345,8 +279,14 @@ folder on all pages you would do this:</p>
 <pre><code class="django">&lt;script src=&quot;{{ base_url }}/js/theme.js&quot;&gt;&lt;/script&gt;
 </code></pre>
 
-<h4 id="homepage_url">homepage_url<a class="headerlink" href="#homepage_url" title="Permanent link"></a></h4>
-<p>Provides a relative path to the documentation homepage.</p>
+<h4 id="extra_css">extra_css<a class="headerlink" href="#extra_css" title="Permanent link"></a></h4>
+<p>Contains a list of URLs to the style-sheets listed in the <a href="../configuration/#extra_css">extra_css</a>
+config setting. Unlike the config setting, which contains local paths, this
+variable contains absolute paths from the homepage.</p>
+<h4 id="extra_javascript">extra_javascript<a class="headerlink" href="#extra_javascript" title="Permanent link"></a></h4>
+<p>Contains a list of URLs to the scripts listed in the <a href="../configuration/#extra_javascript">extra_javascript</a> config
+setting. Unlike the config setting, which contains local paths, this variable
+contains absolute paths from the homepage.</p>
 <h4 id="mkdocs_version">mkdocs_version<a class="headerlink" href="#mkdocs_version" title="Permanent link"></a></h4>
 <p>Contains the current MkDocs version.</p>
 <h4 id="build_date_utc">build_date_utc<a class="headerlink" href="#build_date_utc" title="Permanent link"></a></h4>
@@ -405,8 +345,8 @@ provide a link to edit the source page.</p>
 <p>The URL to the current page not including the <code>site_url</code> from the configuration.</p>
 <h5 id="pageis_homepage">page.is_homepage<a class="headerlink" href="#pageis_homepage" title="Permanent link"></a></h5>
 <p>Evaluates to <code>True</code> for the homepage of the site and <code>False</code> for all other
-pages. This can be used in conjuction with other attributes of the <code>page</code>
-object to alter the behavior. For example, to display a differant title
+pages. This can be used in conjunction with other attributes of the <code>page</code>
+object to alter the behavior. For example, to display a different title
 on the homepage:</p>
 <pre><code class="django">{% if not page.is_homepage %}{{ page.title }} - {% endif %}{{ site_name }}
 </code></pre>
@@ -491,7 +431,7 @@ theme</a> and to see a package that contains many themes, see the <a href="http:
 Bootswatch theme</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>It is not strictly nessecary to package a theme, as the entire theme
+<p>It is not strictly necessary to package a theme, as the entire theme
 can be contained in the <code>theme_dir</code>. If you have created a "one-off theme,"
 that should be sufficent. However, if you intend to distribute your theme
 for others to use, packaging the theme has some advantages. By packaging

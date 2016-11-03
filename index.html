@@ -119,7 +119,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="https://github.com/waylan/mkdocs/">
+                        <a href="https://github.com/mkdocs/mkdocs/">
                                 <i class="fa fa-github"></i>GitHub
                         </a>
                     </li>
@@ -134,9 +134,10 @@
         <li class="main active"><a href="#mkdocs">MkDocs</a></li>
             <li><a href="#overview">Overview</a></li>
             <li><a href="#installation">Installation</a></li>
-            <li><a href="#getting-started">Getting started</a></li>
+            <li><a href="#getting-started">Getting Started</a></li>
             <li><a href="#adding-pages">Adding pages</a></li>
             <li><a href="#theming-our-documentation">Theming our documentation</a></li>
+            <li><a href="#changing-the-favicon-icon">Changing the Favicon Icon</a></li>
             <li><a href="#building-the-site">Building the site</a></li>
             <li><a href="#other-commands-and-options">Other Commands and Options</a></li>
             <li><a href="#deploying">Deploying</a></li>
@@ -169,17 +170,49 @@ your changes.</p>
 the theme.</p>
 <hr />
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link"></a></h2>
-<p>In order to install MkDocs you'll need <a href="https://www.python.org/">Python</a> installed on your system, as
-well as the Python package manager, <a href="http://pip.readthedocs.io/en/stable/installing/">pip</a>. You can check if you have these
-already installed from the command line:</p>
+<h3 id="install-with-a-package-manager">Install with a Package Manager<a class="headerlink" href="#install-with-a-package-manager" title="Permanent link"></a></h3>
+<p>If you have and use a package manager (such as <a href="https://help.ubuntu.com/community/AptGet/Howto">apt-get</a>, <a href="http://dnf.readthedocs.io/en/latest/index.html">dnf</a>, <a href="http://brew.sh/">homebrew</a>,
+<a href="http://yum.baseurl.org/">yum</a>, etc.) to install packages on your system, then you may want to search for
+a "MkDocs" package and, if a recent version is available, install it with your
+package manager (check your system's documentation for details). That's it,
+you're done! Skip down to <a href="#getting-started">Getting Started</a>.</p>
+<p>If your package manager does not have a recent "MkDocs" package, you can still
+use your package manager to install "Python" and "pip". Then you can use pip to
+<a href="#installing-mkdocs">install MkDocs</a>.</p>
+<h3 id="manual-installation">Manual Installation<a class="headerlink" href="#manual-installation" title="Permanent link"></a></h3>
+<p>In order to manually install MkDocs you'll need <a href="https://www.python.org/">Python</a> installed on your
+system, as well as the Python package manager, <a href="http://pip.readthedocs.io/en/stable/installing/">pip</a>. You can check if you have
+these already installed from the command line:</p>
 <pre><code class="bash">$ python --version
 Python 2.7.2
 $ pip --version
 pip 1.5.2
 </code></pre>
 
-<p>MkDocs supports Python versions 2.6, 2.7, 3.3, 3.4 and 3.5.</p>
-<p>On Windows it is recommended that you install Python and pip with <a href="https://chocolatey.org/">Chocolatey</a>.</p>
+<p>MkDocs supports Python versions 2.6, 2.7, 3.3, 3.4, 3.5 and pypy.</p>
+<h4 id="installing-python">Installing Python<a class="headerlink" href="#installing-python" title="Permanent link"></a></h4>
+<p>Install <a href="https://www.python.org/">Python</a> by downloading an installer appropriate for your system from
+<a href="https://www.python.org/downloads/">python.org</a> and running it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are installing Python on Windows, be sure to check the box to have
+Python added to your PATH if the installer offers such an option (it's
+normally off by default).</p>
+<p><img alt="Add Python to PATH" src="./img/win-py-install.png" /></p>
+</div>
+<h4 id="installing-pip">Installing pip<a class="headerlink" href="#installing-pip" title="Permanent link"></a></h4>
+<p>If you're using a recent version of Python, the Python package manager, <a href="http://pip.readthedocs.io/en/stable/installing/">pip</a>,
+is most likely installed by default. However, you may need to upgrade pip to the
+lasted version:</p>
+<pre><code class="bash">pip install --upgrade pip
+</code></pre>
+
+<p>If you need to install <a href="http://pip.readthedocs.io/en/stable/installing/">pip</a> for the first time, download <a href="https://bootstrap.pypa.io/get-pip.py">get-pip.py</a>.
+Then run the following command to install it:</p>
+<pre><code class="bash">python get-pip.py
+</code></pre>
+
+<h4 id="installing-mkdocs">Installing MkDocs<a class="headerlink" href="#installing-mkdocs" title="Permanent link"></a></h4>
 <p>Install the <code>mkdocs</code> package using pip:</p>
 <pre><code class="bash">pip install mkdocs
 </code></pre>
@@ -190,8 +223,25 @@ pip 1.5.2
 mkdocs, version 0.15.3
 </code></pre>
 
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you are using Windows, some of the above commands may not work
+out-of-the-box.</p>
+<p>A quick solution may be to preface every Python command with <code>python -m</code>
+like this:</p>
+<pre><code>python -m pip install mkdocs
+python -m mkdocs
+</code></pre>
+<p>For a more permanent solution, you may need to edit your <code>PATH</code> environment
+variable to include the <code>Scripts</code> directory of your Python installation.
+Recent versions of Python include a script to do this for you. Navigate to
+your Python installation directory (for example <code>C:\Python34\</code>), open the
+<code>Tools</code>, then <code>Scripts</code> folder, and run the <code>win_add2path.py</code> file by double
+clicking on it. Alternatively, you can <a href="https://svn.python.org/projects/python/trunk/Tools/scripts/win_add2path.py">download</a> the script and run it
+(<code>python win_add2path.py</code>).</p>
+</div>
 <hr />
-<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link"></a></h2>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link"></a></h2>
 <p>Getting started is super easy.</p>
 <pre><code class="bash">mkdocs new my-project
 cd my-project
@@ -269,6 +319,11 @@ theme: readthedocs
 
 <p>Save your changes, and you'll see the ReadTheDocs theme being used.</p>
 <p><img alt="Screenshot" src="./img/readthedocs.png" /></p>
+<h2 id="changing-the-favicon-icon">Changing the Favicon Icon<a class="headerlink" href="#changing-the-favicon-icon" title="Permanent link"></a></h2>
+<p>By default, MkDocs uses the <a href="./img/favicon.ico">MkDocs favicon</a> icon. To use a different icon, create
+an <code>img</code> subdirectory in your <code>docs_dir</code> and copy your custom <code>favicon.ico</code> file
+to that directory. MkDocs will automaticaly detect and use that file as your
+favicon icon.</p>
 <h2 id="building-the-site">Building the site<a class="headerlink" href="#building-the-site" title="Permanent link"></a></h2>
 <p>That's looking good. You're ready to deploy the first pass of your <code>MkLorum</code>
 documentation. First build the documentation:</p>
@@ -361,5 +416,5 @@ the MkDocs IRC channel <code>#mkdocs</code> on freenode.</p></div>
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-08-11 14:14:45
+Build Date UTC : 2016-11-03 15:11:34
 -->
