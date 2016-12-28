@@ -21,7 +21,7 @@ class DummyPlugin(plugins.BasePlugin):
         """ prepend `foo` config value to page content. """
         return ' '.join((self.config['foo'], content))
 
-    def on_nav(self, item, **kwargs):
+    def on_post_nav(self, item, **kwargs):
         """ do nothing (return None) to not modify item. """
         return None
 
@@ -103,7 +103,7 @@ class TestPluginCollection(unittest.TestCase):
         plugin = DummyPlugin()
         plugin.load_config({'foo': 'new'})
         collection['foo'] = plugin
-        self.assertEqual(collection.run_event('nav', 'nav item'), 'nav item')
+        self.assertEqual(collection.run_event('post_nav', 'nav item'), 'nav item')
 
     def test_run_undefined_event_on_collection(self):
         collection = plugins.PluginCollection()

@@ -55,11 +55,11 @@ class PluginCollection(OrderedDict):
 
     def __init__(self, *args, **kwargs):
         super(PluginCollection, self).__init__(*args, **kwargs)
-        self.events = {
-            'config': [],
-            'nav': [],
-            'pre_page': []
-        }
+        events = [
+            'pre_nav', 'post_nav', 'pre_build', 'pre_page',
+            'post_page', 'post_build', 'serve', 'deploy'
+        ]
+        self.events = dict((x, []) for x in events)
 
     def _register_event(self, event_name, method):
         """ Register a method for an event. """
