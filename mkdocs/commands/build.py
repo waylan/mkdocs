@@ -182,6 +182,11 @@ def _build_page(page, config, site_navigation, env, dump_json, dirty=False):
         log.error('file not found: %s', input_path)
         raise
 
+    # Run `pre_page` plugin events.
+    input_content = config['plugins'].run_event(
+        'pre_page', input_content, config=config, site_navigation=site_navigation
+    )
+
     # Process the markdown text
     html_content, table_of_contents, meta = convert_markdown(
         markdown_source=input_content,
@@ -209,8 +214,14 @@ def _build_page(page, config, site_navigation, env, dump_json, dirty=False):
                 "Update your theme so that the primary entry point is 'main.html'."
             )
 
+    # Run `pre_template` plugin events.
+    context = config['plugins'].run_event('pre_template', context, config=config)
+
     # Render the template.
     output_content = template.render(context)
+    
+    # Run `post_page` plugin events.
+    output_content = config['plugins'].run_event('post_page', output_content, config=config)
 
     # Write the output file.
     if dump_json:
@@ -296,6 +307,10 @@ def build_pages(config, dump_json=False, dirty=False):
     # TODO: end remove DeprecationContext
 
     env.filters['tojson'] = filters.tojson
+    
+    # Run `pre_build` plugin events.
+    site_navigation = config['plugins'].run_event('pre_build', site_navigation, config=config)
+    
     search_index = search.SearchIndex()
 
     # Force absolute URLs in the nav of error pages and account for the
@@ -347,6 +362,9 @@ def build(config, live_server=False, dump_json=False, dirty=False):
     """
     Perform a full site build.
     """
+    # Run `post_config` plugin events.
+    config = config['plugins'].run_event('post_config', config)
+
     if not dirty:
         log.info("Cleaning site directory")
         utils.clean_directory(config['site_dir'])
@@ -378,6 +396,9 @@ def build(config, live_server=False, dump_json=False, dirty=False):
 
     log.debug("Building markdown pages.")
     build_pages(config, dirty=dirty)
+    
+    # Run `post_build` plugin events.
+    config['plugins'].run_event('post_build', config)
 
 
 def site_directory_contains_stale_files(site_directory):
