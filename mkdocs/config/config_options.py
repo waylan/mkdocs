@@ -563,7 +563,7 @@ class Plugins(OptionallyRequired):
                 if len(item) > 1:
                     raise ValidationError('Invalid Plugins configuration')
                 name, cfg = item.popitem()
-                cfg = cfg or {} # Users may define a null (None) config
+                cfg = cfg or {}  # Users may define a null (None) config
                 if not isinstance(cfg, dict):
                     raise ValidationError('Invalid config options for '
                                           'the "{0}" plugin.'.format(name))
@@ -582,7 +582,7 @@ class Plugins(OptionallyRequired):
                 errors, warnings = plugin.load_config(config)
                 self.warnings.extend(warnings)
                 for cfg_name, error in errors:
-                    # TODO: retain all errors of there are more than one
+                    # TODO: retain all errors if there are more than one
                     raise ValidationError("Plugin value: '%s'. Error: %s", cfg_name, error)
                 return plugin
             else:

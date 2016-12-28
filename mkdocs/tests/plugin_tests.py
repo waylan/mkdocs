@@ -21,6 +21,10 @@ class DummyPlugin(plugins.BasePlugin):
         """ prepend `foo` config value to page content. """
         return ' '.join((self.config['foo'], content))
 
+    def on_nav(self, item, **kwargs):
+        """ do nothing (return None) to not modify item. """
+        return None
+
 
 class TestPluginClass(unittest.TestCase):
 
@@ -93,6 +97,13 @@ class TestPluginCollection(unittest.TestCase):
         collection['bar'] = plugin2
         self.assertEqual(collection.run_event('pre_page', 'page content'),
                          'second new page content')
+
+    def test_event_returns_None(self):
+        collection = plugins.PluginCollection()
+        plugin = DummyPlugin()
+        plugin.load_config({'foo': 'new'})
+        collection['foo'] = plugin
+        self.assertEqual(collection.run_event('nav', 'nav item'), 'nav item')
 
     def test_run_undefined_event_on_collection(self):
         collection = plugins.PluginCollection()

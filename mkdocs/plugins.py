@@ -11,7 +11,7 @@ import pkg_resources
 import logging
 from collections import OrderedDict
 
-from mkdocs.config.base import Config, ValidationError
+from mkdocs.config.base import Config
 
 
 log = logging.getLogger('mkdocs.plugins')
@@ -55,7 +55,7 @@ class PluginCollection(OrderedDict):
 
     def __init__(self, *args, **kwargs):
         super(PluginCollection, self).__init__(*args, **kwargs)
-        self. events = {
+        self.events = {
             'config': [],
             'nav': [],
             'pre_page': []
@@ -88,5 +88,6 @@ class PluginCollection(OrderedDict):
         """
 
         for method in self.events[name]:
-            item = method(item, **kwargs)
+            # method may return None.
+            item = method(item, **kwargs) or item
         return item
