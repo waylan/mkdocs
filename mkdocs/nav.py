@@ -12,6 +12,7 @@ import logging
 import os
 
 from mkdocs import utils, exceptions
+from mkdocs.plugins import PluginCollection
 
 log = logging.getLogger(__name__)
 
@@ -27,11 +28,11 @@ def filename_to_title(filename):
 
 
 class SiteNavigation(object):
-    def __init__(self, pages_config, use_directory_urls=True):
+    def __init__(self, pages_config, use_directory_urls=True, plugins=PluginCollection()):
         self.url_context = URLContext()
         self.file_context = FileContext()
         self.nav_items, self.pages = _generate_site_navigation(
-            pages_config, self.url_context, use_directory_urls)
+            pages_config, self.url_context, use_directory_urls, plugins)
         self.homepage = self.pages[0] if self.pages else None
         self.use_directory_urls = use_directory_urls
 
@@ -251,7 +252,13 @@ def _path_to_page(path, title, url_context, use_directory_urls):
                 url_context=url_context)
 
 
-def _follow(config_line, url_context, use_dir_urls, header=None, title=None):
+def _follow(config_line, url_context, use_dir_urls, plugins, header=None, title=None):
+
+    # Run `pre_nav` plugin events.
+    config_line = plugins.run_event(
+        'pre_nav', config_line, url_context=url_context,
+        use_dir_urls=use_dir_urls, header=header, title=title
+    )
 
     if isinstance(config_line, utils.string_types):
         path = os.path.normpath(config_line)
@@ -281,7 +288,7 @@ def _follow(config_line, url_context, use_dir_urls, header=None, title=None):
 
     if isinstance(subpages_or_path, utils.string_types):
         path = subpages_or_path
-        for sub in _follow(path, url_context, use_dir_urls, header=header, title=next_cat_or_title):
+        for sub in _follow(path, url_context, use_dir_urls, plugins, header=header, title=next_cat_or_title):
             yield sub
         raise StopIteration
 
@@ -300,11 +307,11 @@ def _follow(config_line, url_context, use_dir_urls, header=None, title=None):
     subpages = subpages_or_path
 
     for subpage in subpages:
-        for sub in _follow(subpage, url_context, use_dir_urls, next_header):
+        for sub in _follow(subpage, url_context, use_dir_urls, plugins, next_header):
             yield sub
 
 
-def _generate_site_navigation(pages_config, url_context, use_dir_urls=True):
+def _generate_site_navigation(pages_config, url_context, use_dir_urls=True, plugins=PluginCollection()):
     """
     Returns a list of Page and Header instances that represent the
     top level site navigation.
@@ -317,7 +324,12 @@ def _generate_site_navigation(pages_config, url_context, use_dir_urls=True):
     for config_line in pages_config:
 
         for page_or_header in _follow(
-                config_line, url_context, use_dir_urls):
+                config_line, url_context, use_dir_urls, plugins):
+
+            # Run `post_nav` plugin events.
+            page_or_header = plugins.run_event(
+                'post_nav', page_or_header, url_context=url_context, use_dir_urls=use_dir_urls,
+            )
 
             if isinstance(page_or_header, Header):
 

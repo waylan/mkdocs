@@ -219,7 +219,7 @@ def _build_page(page, config, site_navigation, env, dump_json, dirty=False):
 
     # Render the template.
     output_content = template.render(context)
-    
+
     # Run `post_page` plugin events.
     output_content = config['plugins'].run_event('post_page', output_content, config=config)
 
@@ -263,7 +263,7 @@ def build_pages(config, dump_json=False, dirty=False):
     """
     Builds all the pages and writes them into the build directory.
     """
-    site_navigation = nav.SiteNavigation(config['pages'], config['use_directory_urls'])
+    site_navigation = nav.SiteNavigation(config['pages'], config['use_directory_urls'], config['plugins'])
     loader = jinja2.FileSystemLoader(config['theme_dir'] + [config['mkdocs_templates'], ])
     env = jinja2.Environment(loader=loader)
 
@@ -307,10 +307,10 @@ def build_pages(config, dump_json=False, dirty=False):
     # TODO: end remove DeprecationContext
 
     env.filters['tojson'] = filters.tojson
-    
+
     # Run `pre_build` plugin events.
     site_navigation = config['plugins'].run_event('pre_build', site_navigation, config=config)
-    
+
     search_index = search.SearchIndex()
 
     # Force absolute URLs in the nav of error pages and account for the
@@ -396,7 +396,7 @@ def build(config, live_server=False, dump_json=False, dirty=False):
 
     log.debug("Building markdown pages.")
     build_pages(config, dirty=dirty)
-    
+
     # Run `post_build` plugin events.
     config['plugins'].run_event('post_build', config)
 
