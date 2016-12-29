@@ -57,7 +57,7 @@ class PluginCollection(OrderedDict):
         super(PluginCollection, self).__init__(*args, **kwargs)
         events = [
             'pre_nav', 'post_nav', 'post_config', 'pre_build', 'pre_page',
-            'pre_template', 'post_page', 'post_build', 'serve', 'deploy'
+            'pre_template', 'post_page', 'post_build', 'serve'
         ]
         self.events = dict((x, []) for x in events)
 
