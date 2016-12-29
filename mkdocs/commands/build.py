@@ -11,7 +11,7 @@ from jinja2.exceptions import TemplateNotFound
 import jinja2
 import json
 
-from mkdocs import nav, search, utils
+from mkdocs import nav, utils
 from mkdocs.utils import filters
 from mkdocs.relative_path_ext import RelativePathExtension
 import mkdocs
@@ -184,7 +184,7 @@ def _build_page(page, config, site_navigation, env, dump_json, dirty=False):
 
     # Run `pre_page` plugin events.
     input_content = config['plugins'].run_event(
-        'pre_page', input_content, config=config, site_navigation=site_navigation
+        'pre_page', input_content, config=config, page=page, site_navigation=site_navigation
     )
 
     # Process the markdown text
@@ -235,8 +235,6 @@ def _build_page(page, config, site_navigation, env, dump_json, dirty=False):
         utils.write_file(json_output, output_path.replace('.html', '.json'))
     else:
         utils.write_file(output_content.encode('utf-8'), output_path)
-
-    return html_content, table_of_contents, meta
 
 
 def build_extra_templates(extra_templates, config, site_navigation=None):
@@ -311,8 +309,6 @@ def build_pages(config, dump_json=False, dirty=False):
     # Run `pre_build` plugin events.
     env = config['plugins'].run_event('pre_build', env, config=config, site_navigation=site_navigation)
 
-    search_index = search.SearchIndex()
-
     # Force absolute URLs in the nav of error pages and account for the
     # possability that the docs root might be different than the server root.
     # See https://github.com/mkdocs/mkdocs/issues/77
@@ -323,11 +319,6 @@ def build_pages(config, dump_json=False, dirty=False):
     # Reset nav behavior to the default
     site_navigation.url_context.force_abs_urls = False
     site_navigation.url_context.base_path = default_base
-
-    if not build_template('search.html', env, config, site_navigation):
-        log.debug("Search is enabled but the theme doesn't contain a "
-                  "search.html file. Assuming the theme implements search "
-                  "within a modal.")
 
     build_template('sitemap.xml', env, config, site_navigation)
 
@@ -344,18 +335,10 @@ def build_pages(config, dump_json=False, dirty=False):
                 continue
 
             log.debug("Building page %s", page.input_path)
-            build_result = _build_page(page, config, site_navigation, env,
-                                       dump_json)
-            html_content, table_of_contents, _ = build_result
-            search_index.add_entry_from_context(
-                page, html_content, table_of_contents)
+            _build_page(page, config, site_navigation, env, dump_json)
         except Exception:
             log.error("Error building page %s", page.input_path)
             raise
-
-    search_index = search_index.generate_search_index()
-    json_output_path = os.path.join(config['site_dir'], 'mkdocs', 'search_index.json')
-    utils.write_file(search_index.encode('utf-8'), json_output_path)
 
 
 def build(config, live_server=False, dump_json=False, dirty=False):

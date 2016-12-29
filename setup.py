@@ -72,7 +72,10 @@ setup(
         'mkdocs.themes': [
             'mkdocs = mkdocs.themes.mkdocs',
             'readthedocs = mkdocs.themes.readthedocs',
-        ]
+        ],
+        'mkdocs.plugins': [
+            'search = mkdocs.contrib.search:SearchPlugin',
+        ],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
