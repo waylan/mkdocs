@@ -309,7 +309,7 @@ def build_pages(config, dump_json=False, dirty=False):
     env.filters['tojson'] = filters.tojson
 
     # Run `pre_build` plugin events.
-    site_navigation = config['plugins'].run_event('pre_build', site_navigation, config=config)
+    env = config['plugins'].run_event('pre_build', env, config=config, site_navigation=site_navigation)
 
     search_index = search.SearchIndex()
 
