@@ -363,9 +363,16 @@ markdown_extensions:
 
     You may also install and use various [third party extensions][3rd]. Consult
     the documentation provided by those extensions for installation instructions
-    and available configuration options.
+    and available configuration options. 
 
-**default**: `[]`
+**default**: `[]` (an empty list).
+
+### plugins
+
+A list of plugins (with optional configuration settings) to use when building
+the site . See the [Plugins] documentation for details.
+
+**default**: `[]` (an empty list).
 
 [custom themes]: custom-themes.md
 [variables that are available]: custom-themes.md#template-variables
@@ -378,3 +385,4 @@ markdown_extensions:
 [theme_dir]: styling-your-docs.md#using-the-theme_dir
 [styling your docs]: styling-your-docs.md
 [extra_css]: #extra_css
+[Plugins]: plugins.md
