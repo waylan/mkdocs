@@ -83,6 +83,7 @@ def build_template(template_name, env, config, site_navigation=None):
 def _build_page(page, config, site_navigation, env, dirty=False):
 
     # Process the markdown text
+    page.load_markdown()
     page.render(config, site_navigation)
 
     context = get_context(site_navigation, config, page)

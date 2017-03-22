@@ -179,10 +179,12 @@ class Page(object):
         if config['repo_url']:
             self._set_edit_url(config['repo_url'], config['edit_uri'])
 
-        self._load_markdown()
+        #self._load_markdown()
 
         # Placeholders to be filled in later in the build
         # process when we have access to the config.
+        self.markdown = ''
+        self.meta = {}
         self.content = None
         self.toc = None
 
@@ -243,7 +245,7 @@ class Page(object):
     def is_top_level(self):
         return len(self.ancestors) == 0
 
-    def _load_markdown(self):
+    def load_markdown(self):
         try:
             input_content = io.open(self.abs_input_path, 'r', encoding='utf-8').read()
         except IOError:
