@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 
-from mkdocs import nav, config
+from mkdocs import nav
 from mkdocs.commands import build
 from mkdocs.exceptions import MarkdownNotFound
 from mkdocs.tests.base import dedent, load_config

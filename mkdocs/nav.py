@@ -179,8 +179,6 @@ class Page(object):
         if config['repo_url']:
             self._set_edit_url(config['repo_url'], config['edit_uri'])
 
-        #self._load_markdown()
-
         # Placeholders to be filled in later in the build
         # process when we have access to the config.
         self.markdown = ''

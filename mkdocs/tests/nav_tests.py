@@ -11,7 +11,6 @@ from mkdocs.exceptions import ConfigurationError
 from mkdocs.tests.base import dedent, load_config
 
 
-
 class SiteNavigationTests(unittest.TestCase):
     def test_simple_toc(self):
         pages = [
@@ -368,7 +367,7 @@ class SiteNavigationTests(unittest.TestCase):
         for bad_page in bad_pages:
 
             def _test():
-                return nav._generate_site_navigation({'pages':(bad_page, )}, None)
+                return nav._generate_site_navigation({'pages': (bad_page, )}, None)
 
             self.assertRaises(ConfigurationError, _test)
 
@@ -377,7 +376,7 @@ class SiteNavigationTests(unittest.TestCase):
         bad_page = {}  # empty
 
         def _test():
-            return nav._generate_site_navigation({'pages':(bad_page, )}, None)
+            return nav._generate_site_navigation({'pages': (bad_page, )}, None)
 
         self.assertRaises(ConfigurationError, _test)
 

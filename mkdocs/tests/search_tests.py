@@ -111,6 +111,7 @@ class SearchTests(unittest.TestCase):
             {'Home': 'index.md'},
             {'About': 'about.md'},
         ]
+
         site_navigation = nav.SiteNavigation(load_config(pages=pages))
 
         md = dedent("""
@@ -123,6 +124,10 @@ class SearchTests(unittest.TestCase):
         full_content = ''.join("""Heading{0}Content{0}""".format(i) for i in range(1, 4))
 
         for page in site_navigation:
+            # Fake page.load_markdown() and page.render()
+            page.markdown = md
+            page.toc = toc
+            page.content = html_content
 
             index = search.SearchIndex()
             index.add_entry_from_context(page)

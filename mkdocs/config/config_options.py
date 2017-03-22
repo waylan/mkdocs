@@ -220,11 +220,16 @@ class Dir(Type):
         super(Dir, self).__init__(type_=utils.string_types, **kwargs)
         self.exists = exists
 
+    def run_validation(self, value):
+
+        value = super(Dir, self).run_validation(value)
+
+        if self.exists and not os.path.isdir(value):
+            raise ValidationError("The path {0} doesn't exist".format(value))
+
+        return os.path.abspath(value)
+
     def post_validation(self, config, key_name):
-        
-        config[key_name] = os.path.join(os.path.dirname(config['config_file_path']), config[key_name])
-        if self.exists and not os.path.isdir(config[key_name]):
-            raise ValidationError("The path '{0}' doesn't exist".format(config[key_name]))
 
         # Validate that the dir is not the parent dir of the config file.
         if os.path.dirname(config['config_file_path']) == config[key_name]:
