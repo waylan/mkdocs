@@ -18,24 +18,7 @@ except ImportError:
 from mkdocs import nav, config
 from mkdocs.commands import build
 from mkdocs.exceptions import MarkdownNotFound
-from mkdocs.tests.base import dedent
-
-
-def load_config(cfg=None):
-    """ Helper to build a simple config for testing. """
-    cfg = cfg or {}
-    if 'site_name' not in cfg:
-        cfg['site_name'] = 'Example'
-    if 'config_file_path' not in cfg:
-        cfg['config_file_path'] = os.path.join(os.path.abspath('.'), 'mkdocs.yml')
-    if 'extra_css' not in cfg:
-        cfg['extra_css'] = ['css/extra.css']
-    conf = config.Config(schema=config.DEFAULT_SCHEMA)
-    conf.load_dict(cfg)
-
-    errors_warnings = conf.validate()
-    assert(errors_warnings == ([], [])), errors_warnings
-    return conf
+from mkdocs.tests.base import dedent, load_config
 
 
 class BuildTests(unittest.TestCase):

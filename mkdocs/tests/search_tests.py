@@ -6,7 +6,7 @@ import unittest
 
 from mkdocs import nav
 from mkdocs import search
-from mkdocs.tests.base import dedent, markdown_to_toc
+from mkdocs.tests.base import dedent, markdown_to_toc, load_config
 
 
 def strip_whitespace(string):
@@ -111,7 +111,7 @@ class SearchTests(unittest.TestCase):
             {'Home': 'index.md'},
             {'About': 'about.md'},
         ]
-        site_navigation = nav.SiteNavigation(pages)
+        site_navigation = nav.SiteNavigation(load_config(pages=pages))
 
         md = dedent("""
         # Heading 1
@@ -125,7 +125,7 @@ class SearchTests(unittest.TestCase):
         for page in site_navigation:
 
             index = search.SearchIndex()
-            index.add_entry_from_context(page, html_content, toc)
+            index.add_entry_from_context(page)
 
             self.assertEqual(len(index._entries), 4)
 
