@@ -49,7 +49,7 @@ class BuildTests(unittest.TestCase):
         """
         Ensure that basic Markdown -> HTML and TOC works.
         """
-        src = dedent("""
+        md_text = dedent("""
             title: custom title
 
             # Heading 1
@@ -62,7 +62,7 @@ class BuildTests(unittest.TestCase):
         """)
         
         config = load_config(pages=[{'Home': 'index.md'}])
-        page, nav = build_page(None, 'index.md', config, src)
+        page, nav = build_page(None, 'index.md', config, md_text)
         page.render(config, nav)
 
         expected_html = dedent("""
@@ -87,26 +87,34 @@ class BuildTests(unittest.TestCase):
     def test_convert_internal_link(self):
         md_text = 'An [internal link](internal.md) to another document.'
         expected = '<p>An <a href="internal/">internal link</a> to another document.</p>'
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=['index.md', 'internal.md'])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_convert_multiple_internal_links(self):
         md_text = '[First link](first.md) [second link](second.md).'
         expected = '<p><a href="first/">First link</a> <a href="second/">second link</a>.</p>'
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=['index.md', 'first.md', 'second.md'])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_convert_internal_link_differing_directory(self):
         md_text = 'An [internal link](../internal.md) to another document.'
         expected = '<p>An <a href="../internal/">internal link</a> to another document.</p>'
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=['foo/bar.md', 'internal.md'])
+        page, nav = build_page(None, 'foo/bar.md', config, md_text)
+        page.render(config)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_convert_internal_link_with_anchor(self):
         md_text = 'An [internal link](internal.md#section1.1) to another document.'
         expected = '<p>An <a href="internal/#section1.1">internal link</a> to another document.</p>'
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=['index.md', 'internal.md'])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_convert_internal_media(self):
         """Test relative image URL's are the same for different base_urls"""
@@ -116,7 +124,8 @@ class BuildTests(unittest.TestCase):
             'sub/internal.md',
         ]
 
-        site_navigation = nav.SiteNavigation(pages)
+        config =  load_config(pages=pages)
+        site_navigation = nav.SiteNavigation(config)
 
         expected_results = (
             './img/initial-layout.png',
@@ -127,9 +136,9 @@ class BuildTests(unittest.TestCase):
         template = '<p><img alt="The initial MkDocs layout" src="%s" /></p>'
 
         for (page, expected) in zip(site_navigation.walk_pages(), expected_results):
-            md_text = '![The initial MkDocs layout](img/initial-layout.png)'
-            html, _, _ = build.convert_markdown(md_text, load_config(), site_navigation=site_navigation)
-            self.assertEqual(html, template % expected)
+            page.markdown = '![The initial MkDocs layout](img/initial-layout.png)'
+            page.render(config, site_navigation)
+            self.assertEqual(page.content, template % expected)
 
     def test_convert_internal_asbolute_media(self):
         """Test absolute image URL's are correct for different base_urls"""
@@ -139,7 +148,8 @@ class BuildTests(unittest.TestCase):
             'sub/internal.md',
         ]
 
-        site_navigation = nav.SiteNavigation(pages)
+        config =  load_config(pages=pages)
+        site_navigation = nav.SiteNavigation(config)
 
         expected_results = (
             './img/initial-layout.png',
@@ -150,9 +160,9 @@ class BuildTests(unittest.TestCase):
         template = '<p><img alt="The initial MkDocs layout" src="%s" /></p>'
 
         for (page, expected) in zip(site_navigation.walk_pages(), expected_results):
-            md_text = '![The initial MkDocs layout](/img/initial-layout.png)'
-            html, _, _ = build.convert_markdown(md_text, load_config(), site_navigation=site_navigation)
-            self.assertEqual(html, template % expected)
+            page.markdown = '![The initial MkDocs layout](/img/initial-layout.png)'
+            page.render(config, site_navigation)
+            self.assertEqual(page.content, template % expected)
 
     def test_dont_convert_code_block_urls(self):
         pages = [
@@ -161,7 +171,8 @@ class BuildTests(unittest.TestCase):
             'sub/internal.md',
         ]
 
-        site_navigation = nav.SiteNavigation(pages)
+        config =  load_config(pages=pages)
+        site_navigation = nav.SiteNavigation(config)
 
         expected = dedent("""
         <p>An HTML Anchor::</p>
@@ -170,9 +181,9 @@ class BuildTests(unittest.TestCase):
         """)
 
         for page in site_navigation.walk_pages():
-            markdown = 'An HTML Anchor::\n\n    <a href="index.md">My example link</a>\n'
-            html, _, _ = build.convert_markdown(markdown, load_config(), site_navigation=site_navigation)
-            self.assertEqual(dedent(html), expected)
+            page.markdown = 'An HTML Anchor::\n\n    <a href="index.md">My example link</a>\n'
+            page.render(config, site_navigation)
+            self.assertEqual(page.content, expected)
 
     def test_anchor_only_link(self):
         pages = [
@@ -181,28 +192,29 @@ class BuildTests(unittest.TestCase):
             'sub/internal.md',
         ]
 
-        site_navigation = nav.SiteNavigation(pages)
+        config = load_config(pages=pages)
+        site_navigation = nav.SiteNavigation(config)
 
         for page in site_navigation.walk_pages():
-            markdown = '[test](#test)'
-            html, _, _ = build.convert_markdown(markdown, load_config(), site_navigation=site_navigation)
-            self.assertEqual(html, '<p><a href="#test">test</a></p>')
+            page.markdown = '[test](#test)'
+            page.render(config, site_navigation)
+            self.assertEqual(page.content, '<p><a href="#test">test</a></p>')
 
     def test_ignore_external_link(self):
         md_text = 'An [external link](http://example.com/external.md).'
         expected = '<p>An <a href="http://example.com/external.md">external link</a>.</p>'
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_not_use_directory_urls(self):
         md_text = 'An [internal link](internal.md) to another document.'
         expected = '<p>An <a href="internal/index.html">internal link</a> to another document.</p>'
-        pages = [
-            'internal.md',
-        ]
-        site_navigation = nav.SiteNavigation(pages, use_directory_urls=False)
-        html, toc, meta = build.convert_markdown(md_text, load_config(), site_navigation=site_navigation)
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=['index.md', 'internal.md'], use_directory_urls=False)
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_ignore_email_links(self):
         md_text = 'A <autolink@example.com> and an [link](mailto:example@example.com).'
@@ -213,19 +225,21 @@ class BuildTests(unittest.TestCase):
             '&#107;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#99;&#111;&#109;',
             '</a> and an <a href="mailto:example@example.com">link</a>.</p>'
         ])
-        html, toc, meta = build.convert_markdown(md_text, load_config())
-        self.assertEqual(html.strip(), expected.strip())
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected.strip())
 
     def test_markdown_table_extension(self):
         """
         Ensure that the table extension is supported.
         """
-        html, toc, meta = build.convert_markdown(dedent("""
+        md_text = dedent("""
         First Header   | Second Header
         -------------- | --------------
         Content Cell 1 | Content Cell 2
         Content Cell 3 | Content Cell 4
-        """), load_config())
+        """)
 
         expected_html = dedent("""
         <table>
@@ -247,55 +261,61 @@ class BuildTests(unittest.TestCase):
         </tbody>
         </table>
         """)
-
-        self.assertEqual(html.strip(), expected_html)
+        
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected_html)
 
     def test_markdown_fenced_code_extension(self):
         """
         Ensure that the fenced code extension is supported.
         """
-        html, toc, meta = build.convert_markdown(dedent("""
+        md_text = dedent("""
         ```
         print 'foo'
         ```
-        """), load_config())
+        """)
 
         expected_html = dedent("""
         <pre><code>print 'foo'\n</code></pre>
         """)
 
-        self.assertEqual(html.strip(), expected_html)
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected_html)
 
     def test_markdown_custom_extension(self):
         """
         Check that an extension applies when requested in the arguments to
         `convert_markdown`.
         """
-        md_input = "foo__bar__baz"
+        md_text = "foo__bar__baz"
 
         # Check that the plugin is not active when not requested.
         expected_without_smartstrong = "<p>foo<strong>bar</strong>baz</p>"
-        html_base, _, _ = build.convert_markdown(md_input, load_config())
-        self.assertEqual(html_base.strip(), expected_without_smartstrong)
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected_without_smartstrong)
 
         # Check that the plugin is active when requested.
-        cfg = load_config({
-            'markdown_extensions': ['smart_strong']
-        })
         expected_with_smartstrong = "<p>foo__bar__baz</p>"
-        html_ext, _, _ = build.convert_markdown(md_input, cfg)
-        self.assertEqual(html_ext.strip(), expected_with_smartstrong)
+        config = load_config(pages=[{'Home': 'index.md'}], markdown_extensions=['smart_strong'])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected_with_smartstrong)
 
     def test_markdown_duplicate_custom_extension(self):
         """
         Duplicated extension names should not cause problems.
         """
-        cfg = load_config({
-            'markdown_extensions': ['toc']
-        })
-        md_input = "foo"
-        html_ext, _, _ = build.convert_markdown(md_input, cfg)
-        self.assertEqual(html_ext.strip(), '<p>foo</p>')
+        md_text = "foo"
+        config = load_config(pages=[{'Home': 'index.md'}], markdown_extensions=['toc'])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), '<p>foo</p>')
 
     def test_copying_media(self):
         docs_dir = tempfile.mkdtemp()
@@ -321,10 +341,7 @@ class BuildTests(unittest.TestCase):
             os.mkdir(os.path.join(docs_dir, '.git'))
             open(os.path.join(docs_dir, '.git/hidden'), 'w').close()
 
-            cfg = load_config({
-                'docs_dir': docs_dir,
-                'site_dir': site_dir
-            })
+            cfg = load_config(docs_dir=docs_dir, site_dir=site_dir)
             build.build(cfg)
 
             # Verify only the markdown (coverted to html) and the image are copied.
@@ -352,10 +369,7 @@ class BuildTests(unittest.TestCase):
             """))
             f.close()
 
-            cfg = load_config({
-                'docs_dir': docs_dir,
-                'site_dir': site_dir
-            })
+            cfg = load_config(docs_dir=docs_dir, site_dir=site_dir)
             build.build(cfg)
 
             # Verify only theme media are copied, not templates or Python files.
@@ -378,11 +392,16 @@ class BuildTests(unittest.TestCase):
             'internal.md',
             'sub/internal.md',
         ]
-        site_nav = nav.SiteNavigation(pages)
 
-        valid = "[test](internal.md)"
-        build.convert_markdown(valid, load_config({'strict': False}), site_nav)
-        build.convert_markdown(valid, load_config({'strict': True}), site_nav)
+        md_text = "[test](internal.md)"
+
+        config = load_config(pages=pages, strict=False)
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        
+        config = load_config(pages=pages, strict=True)
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
 
     def test_strict_mode_invalid(self):
         pages = [
@@ -390,55 +409,58 @@ class BuildTests(unittest.TestCase):
             'internal.md',
             'sub/internal.md',
         ]
-        site_nav = nav.SiteNavigation(pages)
 
-        invalid = "[test](bad_link.md)"
-        build.convert_markdown(invalid, load_config({'strict': False}), site_nav)
+        md_text = "[test](bad_link.md)"
 
+        config = load_config(pages=pages, strict=False)
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        
+        config = load_config(pages=pages, strict=True)
+        page, nav = build_page(None, 'index.md', config, md_text)
         self.assertRaises(
             MarkdownNotFound,
-            build.convert_markdown, invalid, load_config({'strict': True}), site_nav)
+            page.render, config, nav)
 
     def test_absolute_link(self):
         pages = [
             'index.md',
             'sub/index.md',
         ]
-        site_nav = nav.SiteNavigation(pages)
 
-        markdown = "[test 1](/index.md) [test 2](/sub/index.md)"
-        cfg = load_config({'strict': True})
-        build.convert_markdown(markdown, cfg, site_nav)
+        md_text = "[test 1](/index.md) [test 2](/sub/index.md)"
+        config = load_config(pages=pages, strict=True)
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
 
     def test_extension_config(self):
         """
         Test that a dictionary of 'markdown_extensions' is recognized as
         both a list of extensions and a dictionary of extnesion configs.
         """
-        cfg = load_config({
-            'markdown_extensions': [{'toc': {'permalink': True}}]
-        })
-
-        html, toc, meta = build.convert_markdown(dedent("""
+        md_text = dedent("""
         # A Header
-        """), cfg)
+        """)
 
         expected_html = dedent("""
         <h1 id="a-header">A Header<a class="headerlink" href="#a-header" title="Permanent link">&para;</a></h1>
         """)
 
-        self.assertEqual(html.strip(), expected_html)
+        config = load_config(pages=[{'Home': 'index.md'}], markdown_extensions=[{'toc': {'permalink': True}}])
+        page, nav = build_page(None, 'index.md', config, md_text)
+        page.render(config, nav)
+        self.assertEqual(page.content.strip(), expected_html)
 
     def test_extra_context(self):
 
         # Same as the default schema, but don't verify the docs_dir exists.
-        cfg = load_config({
-            'site_name': "Site",
-            'extra': {
+        cfg = load_config(
+            site_name="Site",
+            extra={
                 'a': 1
             }
-        })
+        )
 
-        context = build.get_global_context(mock.Mock(), cfg)
+        context = build.get_context(mock.Mock(), cfg)
 
         self.assertEqual(context['config']['extra']['a'], 1)
