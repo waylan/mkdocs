@@ -19,23 +19,38 @@ from mkdocs import nav
 from mkdocs.commands import build
 from mkdocs.exceptions import MarkdownNotFound
 from mkdocs.tests.base import dedent, load_config
+from mkdocs.utils import meta
+
+
+def build_page(title, path, config, md_src=None):
+    """ Helper which returns a Page object. """
+    
+    sitenav = nav.SiteNavigation(config)
+    page = nav.Page(title, path, sitenav.url_context, config)
+    if md_src:
+        # Fake page.load_markdown()
+        page.markdown, page.meta = meta.get_data(md_src)
+    return page, sitenav
 
 
 class BuildTests(unittest.TestCase):
 
     def test_empty_document(self):
-        html, toc, meta = build.convert_markdown("", load_config())
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config)
+        page.render(config, nav)
 
-        self.assertEqual(html, '')
-        self.assertEqual(len(list(toc)), 0)
-        self.assertEqual(meta, {})
+        self.assertEqual(page.content, '')
+        self.assertEqual(len(list(page.toc)), 0)
+        self.assertEqual(page.meta, {})
+        self.assertEqual(page.title, 'Home')
 
     def test_convert_markdown(self):
         """
         Ensure that basic Markdown -> HTML and TOC works.
         """
-        html, toc, meta = build.convert_markdown(dedent("""
-            page_title: custom title
+        src = dedent("""
+            title: custom title
 
             # Heading 1
 
@@ -44,7 +59,11 @@ class BuildTests(unittest.TestCase):
             # Heading 2
 
             And some more text.
-        """), load_config())
+        """)
+        
+        config = load_config(pages=[{'Home': 'index.md'}])
+        page, nav = build_page(None, 'index.md', config, src)
+        page.render(config, nav)
 
         expected_html = dedent("""
             <h1 id="heading-1">Heading 1</h1>
@@ -58,11 +77,12 @@ class BuildTests(unittest.TestCase):
             Heading 2 - #heading-2
         """)
 
-        expected_meta = {'page_title': ['custom title']}
+        expected_meta = {'title': 'custom title'}
 
-        self.assertEqual(html.strip(), expected_html)
-        self.assertEqual(str(toc).strip(), expected_toc)
-        self.assertEqual(meta, expected_meta)
+        self.assertEqual(page.content.strip(), expected_html)
+        self.assertEqual(str(page.toc).strip(), expected_toc)
+        self.assertEqual(page.meta, expected_meta)
+        self.assertEqual(page.title, 'custom title')
 
     def test_convert_internal_link(self):
         md_text = 'An [internal link](internal.md) to another document.'
