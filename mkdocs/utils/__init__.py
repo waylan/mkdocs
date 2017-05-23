@@ -42,6 +42,14 @@ else:                           # pragma: no cover
 log = logging.getLogger(__name__)
 
 
+MARKDOWN_EXTENSIONS = (
+    '.markdown',
+    '.mdown',
+    '.mkdn',
+    '.mkd',
+    '.md',
+)
+
 def yaml_load(source, loader=yaml.Loader):
     """
     Wrap PyYaml's loader so we can extend it to suit our needs.
@@ -222,13 +230,7 @@ def is_markdown_file(path):
     http://superuser.com/questions/249436/file-extension-for-markdown-files
     """
     ext = os.path.splitext(path)[1].lower()
-    return ext in [
-        '.markdown',
-        '.mdown',
-        '.mkdn',
-        '.mkd',
-        '.md',
-    ]
+    return ext in MARKDOWN_EXTENSIONS
 
 
 def is_css_file(path):

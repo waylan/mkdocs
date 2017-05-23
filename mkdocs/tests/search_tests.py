@@ -5,8 +5,9 @@ from __future__ import unicode_literals
 import unittest
 
 from mkdocs import nav
+from mkdocs.structure.toc import get_toc
 from mkdocs.contrib.legacy_search import search_index as search
-from mkdocs.tests.base import dedent, markdown_to_toc, load_config
+from mkdocs.tests.base import dedent, get_markdown_toc, load_config
 
 
 def strip_whitespace(string):
@@ -82,7 +83,7 @@ class SearchTests(unittest.TestCase):
         ## Heading 2
         ### Heading 3
         """)
-        toc = markdown_to_toc(md)
+        toc = get_toc(get_markdown_toc(md))
 
         toc_item = index._find_toc_by_id(toc, "heading-1")
         self.assertEqual(toc_item.url, "#heading-1")
@@ -119,7 +120,7 @@ class SearchTests(unittest.TestCase):
         ## Heading 2
         ### Heading 3
         """)
-        toc = markdown_to_toc(md)
+        toc = get_toc(get_markdown_toc(md))
 
         full_content = ''.join("""Heading{0}Content{0}""".format(i) for i in range(1, 4))
 

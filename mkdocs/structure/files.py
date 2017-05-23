@@ -1,5 +1,8 @@
 import fnmatch
 import os
+from functools import cmp_to_key
+
+from mkdocs.utils import MARKDOWN_EXTENSIONS
 
 
 class Files(object):
@@ -53,17 +56,11 @@ class File(object):
                 directory = os.path.dirname(self.input_path)
             else:
                 directory = os.path.splitext(self.input_path)[0]
-            return os.path.join(directory, 'index.html')
-        return self.input_path
+            return os.path.normpath(os.path.join(directory, 'index.html'))
+        return os.path.normpath(self.input_path)
 
     def is_documentation_page(self):
-        return self.extension in (
-            '.markdown',
-            '.mdown',
-            '.mkdn',
-            '.mkd',
-            '.md',
-        )
+        return self.extension in MARKDOWN_EXTENSIONS
 
     def is_static_page(self):
         return self.extension in (
@@ -100,8 +97,9 @@ def get_files(from_dir):
             # Skip any excluded directories
             if _filter_paths(basename=dirname, path=path, is_dir=True, exclude=exclude):
                 dirnames.remove(dirname)
+        dirnames.sort()
 
-        for filename in filenames:
+        for filename in sort_files(filenames):
             path = os.path.normpath(os.path.join(relative_dir, filename))
             # Skip any excluded files
             if _filter_paths(basename=filename, path=path, is_dir=False, exclude=exclude):
@@ -110,6 +108,23 @@ def get_files(from_dir):
             files.append(file)
 
     return Files(files)
+
+
+def sort_files(filenames):
+    """
+    Always sort index as first filename in list.
+    """
+
+    def compare(x, y):
+        if x == y:
+            return 0
+        if os.path.splitext(y)[0] == 'index':
+            return 1
+        if  os.path.splitext(x)[0] == 'index' or x < y:
+            return -1
+        return 1
+
+    return sorted(filenames, key=cmp_to_key(compare))
 
 
 def _filter_paths(basename, path, is_dir, exclude):

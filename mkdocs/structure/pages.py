@@ -1,19 +1,31 @@
-from mkdocs.compat import urlparse, urlunparse
+from __future__ import unicode_literals
+
 from mkdocs.structure.toc import get_toc
 from mkdocs.structure.urls import get_relative_url
+from mkdocs.utils import meta, urlparse, urlunparse, urljoin, get_markdown_title
 
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import AMP_SUBSTITUTE
 import markdown
+import datetime
+import logging
 import io
 import os
 
 
+log = logging.getLogger(__name__)
+
+
+@meta.transformer()
+def default(value):
+    """ By default, return all meta values as strings. """
+    return ' '.join(value)
+
+
 class Page(object):
-    def __init__(self, title, filepath):
-        self.title = title
-        self.file = None
+    def __init__(self, title, file, config):
+        self.file = file
 
         # Navigation attributes
         self.parent = None
@@ -22,38 +34,123 @@ class Page(object):
 
         self.is_section = False
         self.is_page = True
+        # self.active = False
 
-        # Build attributes
-        self.markdown = None
+        # Support SOURCE_DATE_EPOCH environment variable for "reproducible" builds.
+        # See https://reproducible-builds.org/specs/source-date-epoch/
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            self.update_date = datetime.datetime.utcfromtimestamp(
+                int(os.environ['SOURCE_DATE_EPOCH'])
+            ).strftime("%Y-%m-%d")
+        else:
+            self.update_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        self._set_abs_url(config.get('use_directory_urls', None))
+        self._set_canonical_url(config.get('site_url', None))
+        self._set_edit_url(config.get('repo_url', None), config.get('edit_uri', None))
+        self._load_markdown()
+        self._set_title(title)
+
+        # Placeholders to be filled in later in the build process.
         self.html = None
-        self.meta = {}
         self.toc = []
 
-        # '_filepath' is only used temporarily, when a page is first
-        # created based on the 'pages' configuration.
-        # The '.file' attribute should be used as the public API.
-        self._filepath = filepath
+    @property
+    def is_index(self):
+        return self.file.root == 'index'
 
-    def build(self, md):
-        input_filepath = self.file.full_input_path
-        self.markdown = io.open(input_filepath, 'r', encoding='utf-8').read()
+    @property
+    def is_top_level(self):
+        return self.parent is None
+
+    @property
+    def is_homepage(self):
+        return self.is_top_level and self.is_index
+
+    def _set_abs_url(self, use_directory_urls):
+        url = self.file.output_path.replace('\\', '/')
+        if use_directory_urls:
+            self.abs_url = url[:-len('index.html')]
+        else:
+            self.abs_url = url
+
+    def _set_canonical_url(self, base):
+        if base:
+            if not base.endswith('/'):
+                base += '/'
+            self.canonical_url = urljoin(base, self.abs_url.lstrip('/'))
+        else:
+            self.canonical_url = None
+
+    def _set_edit_url(self, repo_url, edit_uri):
+        if repo_url:
+            if not repo_url.endswith('/'):
+                repo_url += '/'
+            if not edit_uri:
+                self.edit_url = repo_url
+            else:
+                input_path_url = self.file.input_path.replace('\\', '/')
+                if not edit_uri.endswith('/'):
+                    edit_uri += '/'
+                self.edit_url = urljoin(repo_url, edit_uri + input_path_url)
+        else:
+            self.edit_url = None
+
+    def _load_markdown(self):
+        try:
+            input_content = io.open(self.file.full_input_path, 'r', encoding='utf-8').read()
+        except IOError:
+            log.error('file not found: %s', self.file.full_input_path)
+            raise
+
+        self.markdown, self.meta = meta.get_data(input_content)
+
+    def _set_title(self, title):
+        """
+        Set the title for a Markdown document.
+
+        Check these in order and use the first that returns a valid title:
+        - value provided on init (passed in from config)
+        - value of metadata 'title'
+        - content of the first H1 in Markdown content
+        - convert filename to title
+        """
+        if title is not None:
+            self.title = title
+            return
+
+        if 'title' in self.meta:
+            self.title = self.meta['title']
+            return
+
+        title = get_markdown_title(self.markdown)
+
+        if title is None:
+            if self.is_homepage:
+                title = 'Home'
+            else:
+                title = self.file.root.replace('-', ' ').replace('_', ' ')
+                # Capitalize if the filename was all lowercase, otherwise leave it as-is.
+                if title.lower() == title:
+                    title = title.capitalize()
+
+        self.title = title
+
+    def render(self, config, files):
+        """
+        Convert the Markdown source file to HTML as per the config.
+        """
+
+        extensions = [
+            _RelativePathExtension(self.file, files, config['strict'])
+        ] + config['markdown_extensions']
+
+        md = markdown.Markdown(
+            extensions=extensions,
+            extension_configs=config['mdx_configs'] or {}
+        )
         self.html = md.convert(self.markdown)
-        self.meta = getattr(md, 'Meta', {})
         self.toc = get_toc(getattr(md, 'toc', ''))
-        if self.title is None:
-            self.title = self.get_default_title()
-
-    def get_default_title(self):
-        # Determine the title based on the first item in the table of contents.
-        if self.toc:
-            return self.toc[0].title
-
-        # Failing that, determine the title based on the filename.
-        title = self.file.root.replace('-', ' ').replace('_', ' ')
-        if title.lower() == title:
-            # Capitalize if the filename was all lowercase.
-            title = title.capitalize()
-        return title
 
 
 def build_pages(files):
