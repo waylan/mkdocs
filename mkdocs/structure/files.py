@@ -2,6 +2,8 @@ import fnmatch
 import os
 from functools import cmp_to_key
 
+from mkdocs.utils import MARKDOWN_EXTENSIONS
+
 
 class Files(object):
     def __init__(self, files):
@@ -58,13 +60,7 @@ class File(object):
         return os.path.normpath(self.input_path)
 
     def is_documentation_page(self):
-        return self.extension in (
-            '.markdown',
-            '.mdown',
-            '.mkdn',
-            '.mkd',
-            '.md',
-        )
+        return self.extension in MARKDOWN_EXTENSIONS
 
     def is_static_page(self):
         return self.extension in (
