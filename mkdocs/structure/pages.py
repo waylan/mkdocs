@@ -6,54 +6,145 @@ from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import AMP_SUBSTITUTE
 import markdown
+import datetime
 import io
 import os
 
 
 class Page(object):
-    def __init__(self, title, filepath):
-        self.title = title
-        self.file = None
+    def __init__(self, title, file, config):
+        self._title = title
+        self.file = file
+                
+        # self.active = False
+
+        # Support SOURCE_DATE_EPOCH environment variable for "reproducible" builds.
+        # See https://reproducible-builds.org/specs/source-date-epoch/
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            self.update_date = datetime.datetime.utcfromtimestamp(
+                int(os.environ['SOURCE_DATE_EPOCH'])
+            ).strftime("%Y-%m-%d")
+        else:
+            self.update_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        # Relative and absolute paths to the input markdown file and output html file.
+        #self.input_path = filepath
+        #self.output_path = utils.get_html_path(filepath)
+        #self.abs_input_path = os.path.join(config['docs_dir'], self.input_path)
+        #self.abs_output_path = os.path.join(config['site_dir'], self.output_path)
+
+        self._set_abs_url(config.get('use_directory_urls', None))
+
+        self._set_canonical_url(config.get('site_url', None))
+
+        self._set_edit_url(config.get('repo_url', None), config.get('edit_uri', None))
+
+        # Placeholders to be filled in later in the build
+        # process when we have access to the config.
+        self.markdown = ''
+        self.meta = {}
+        self.html = None
+        self.toc = []
 
         # Navigation attributes
         self.parent = None
         self.previous = None
         self.next = None
-
+        
         self.is_section = False
         self.is_page = True
 
-        # Build attributes
-        self.markdown = None
-        self.html = None
-        self.meta = {}
-        self.toc = []
+  
+    @property
+    def title(self):
+        """
+        Get the title for a Markdown document & cache it in self._title
+        Check these in order and use the first that has a valid title:
+        - self._title which is populated from the mkdocs.yml
+        - self.meta['title'] which comes from the page metadata
+        - self.markdown - look for the first H1
+        - self.input_path - create a title based on the filename
+        """
+        if self._title is None:
+            if 'title' in self.meta:
+                self._title = self.meta['title']
+            else:
+                self._title = utils.get_markdown_title(self.markdown)
+    
+            if self._title is None:
+                self._title = _filename_to_title(self.file.root)
 
-        # '_filepath' is only used temporarily, when a page is first
-        # created based on the 'pages' configuration.
-        # The '.file' attribute should be used as the public API.
-        self._filepath = filepath
+        return self._title
 
-    def build(self, md):
-        input_filepath = self.file.full_input_path
-        self.markdown = io.open(input_filepath, 'r', encoding='utf-8').read()
+    @property
+    def is_homepage(self):
+        return utils.is_homepage(self.input_path)
+
+    @property
+    def is_top_level(self):
+        return self.parent is None
+
+    def _set_abs_url(self, use_directory_urls):
+        if use_directory_urls:
+            self.abs_url = self.file.output_path[:-len('index.html')]
+        else:
+            self.abs_url = self.file.output_path
+
+    def _set_canonical_url(self, base):
+        if base:
+            if not base.endswith('/'):
+                base += '/'
+            self.canonical_url = utils.urljoin(base, self.abs_url.lstrip('/'))
+        else:
+            self.canonical_url = None
+
+    def _set_edit_url(self, repo_url, edit_uri):
+        if repo_url:
+            if not repo_url.endswith('/'):
+                # Skip when using query or fragment in edit_uri
+                if not edit_uri.startswith('?') and not edit_uri.startswith('#'):
+                    repo_url += '/'
+            if not edit_uri:
+                self.edit_url = repo_url
+            else:
+                # Normalize URL from Windows path '\\' -> '/'
+                input_path_url = self.input_path.replace('\\', '/')
+                if not edit_uri.endswith('/'):
+                    edit_uri += '/'
+                self.edit_url = utils.urljoin(
+                    repo_url,
+                    edit_uri + input_path_url
+                )
+        else:
+            self.edit_url = None
+
+    def load_markdown(self):
+        try:
+            input_content = io.open(self.file.full_input_path, 'r', encoding='utf-8').read()
+        except IOError:
+            log.error('file not found: %s', self.file.full_input_path)
+            raise
+
+        self.markdown, self.meta = meta.get_data(input_content)
+    
+    def render(self, config, files):
+        """
+        Convert the Markdown source file to HTML as per the config and
+        site_navigation.
+
+        """
+
+        extensions = [
+            _RelativePathExtension(self.file, files, config['strict'])
+        ] + config['markdown_extensions']
+
+        md = markdown.Markdown(
+            extensions=extensions,
+            extension_configs=config['mdx_configs'] or {}
+        )
         self.html = md.convert(self.markdown)
-        self.meta = getattr(md, 'Meta', {})
         self.toc = get_toc(getattr(md, 'toc', ''))
-        if self.title is None:
-            self.title = self.get_default_title()
 
-    def get_default_title(self):
-        # Determine the title based on the first item in the table of contents.
-        if self.toc:
-            return self.toc[0].title
-
-        # Failing that, determine the title based on the filename.
-        title = self.file.root.replace('-', ' ').replace('_', ' ')
-        if title.lower() == title:
-            # Capitalize if the filename was all lowercase.
-            title = title.capitalize()
-        return title
 
 
 def build_pages(files):
