@@ -124,10 +124,10 @@ def _build_page(page, config, site_navigation, env, dirty=False):
 
     # Run the `pre_page` plugin event
     page = config['plugins'].run_event(
-        'page_markdown', page, config=config, site_navigation=site_navigation
+        'pre_page', page, config=config, site_navigation=site_navigation
     )
 
-    page.load_markdown()
+    page.read_source(config=config)
 
     # Run `page_markdown` plugin events.
     page.markdown = config['plugins'].run_event(

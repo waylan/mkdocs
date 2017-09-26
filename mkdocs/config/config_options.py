@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+
+from collections import Sequence
 import os
 
 from mkdocs import utils, theme, plugins
@@ -22,10 +24,9 @@ class BaseConfigOption(object):
 
     def pre_validation(self, config, key_name):
         """
-        After all options have passed validation, perform a post validation
-        process to do any additional changes dependant on other config values.
+        Before all options are validated, perform a pre-validation process.
 
-        The post validation process method should be implemented by subclasses.
+        The pre-validation process method should be implemented by subclasses.
         """
 
     def run_validation(self, value):
@@ -38,10 +39,10 @@ class BaseConfigOption(object):
 
     def post_validation(self, config, key_name):
         """
-        After all options have passed validation, perform a post validation
+        After all options have passed validation, perform a post-validation
         process to do any additional changes dependant on other config values.
 
-        The post validation process method should be implemented by subclasses.
+        The post-validation process method should be implemented by subclasses.
         """
 
 
@@ -60,12 +61,41 @@ class SubConfig(BaseConfigOption, Config):
         return self
 
 
+class ConfigItems(BaseConfigOption):
+    """
+    Config Items Option
+
+    Validates a list of mappings that all must match the same set of
+    options.
+    """
+    def __init__(self, *config_options, **kwargs):
+        BaseConfigOption.__init__(self)
+        self.item_config = SubConfig(*config_options)
+        self.required = kwargs.get('required', False)
+
+    def __repr__(self):
+        return '{}: {}'.format(self.__class__.__name__, self.item_config)
+
+    def run_validation(self, value):
+        if value is None:
+            if self.required:
+                raise ValidationError("Required configuration not provided.")
+            else:
+                return ()
+
+        if not isinstance(value, Sequence):
+            raise ValidationError('Expected a sequence of mappings, but a %s '
+                                  'was given.' % type(value))
+        result = []
+        for item in value:
+            result.append(self.item_config.validate(item))
+        return result
+
+
 class OptionallyRequired(BaseConfigOption):
     """
-    The BaseConfigOption adds support for default values and required values
-
-    It then delegates the validation and (optional) post validation processing
-    to subclasses.
+    A subclass of BaseConfigOption that adds support for default values and
+    required values. It is a base class for config options.
     """
 
     def __init__(self, default=None, required=False):
@@ -87,7 +117,11 @@ class OptionallyRequired(BaseConfigOption):
 
         if value is None:
             if self.default is not None:
-                value = self.default
+                if hasattr(self.default, 'copy'):
+                    # ensure no mutable values are assigned
+                    value = self.default.copy()
+                else:
+                    value = self.default
             elif not self.required:
                 return
             elif self.required:
@@ -111,10 +145,10 @@ class Type(OptionallyRequired):
     def run_validation(self, value):
 
         if not isinstance(value, self._type):
-            msg = ("Expected type: {0} but recieved: {1}"
+            msg = ("Expected type: {0} but received: {1}"
                    .format(self._type, type(value)))
         elif self.length is not None and len(value) != self.length:
-            msg = ("Expected type: {0} with lenght {2} but recieved: {1} with "
+            msg = ("Expected type: {0} with length {2} but received: {1} with "
                    "length {3}").format(self._type, value, self.length,
                                         len(value))
         else:
@@ -209,25 +243,30 @@ class RepoURL(URL):
                 config['edit_uri'] = 'src/default/docs/'
 
 
-class Dir(Type):
+class FilesystemObject(Type):
+    """
+    Base class for options that point to filesystem objects.
+    """
+    def __init__(self, exists=False, **kwargs):
+        super(FilesystemObject, self).__init__(type_=utils.string_types, **kwargs)
+        self.exists = exists
+
+    def run_validation(self, value):
+        value = super(FilesystemObject, self).run_validation(value)
+        if self.exists and not self.existence_test(value):
+            raise ValidationError("The path {path} isn't an existing {name}.".
+                                  format(path=value, name=self.name))
+        return os.path.abspath(value)
+
+
+class Dir(FilesystemObject):
     """
     Dir Config Option
 
     Validate a path to a directory, optionally verifying that it exists.
     """
-
-    def __init__(self, exists=False, **kwargs):
-        super(Dir, self).__init__(type_=utils.string_types, **kwargs)
-        self.exists = exists
-
-    def run_validation(self, value):
-
-        value = super(Dir, self).run_validation(value)
-
-        if self.exists and not os.path.isdir(value):
-            raise ValidationError("The path {0} doesn't exist".format(value))
-
-        return os.path.abspath(value)
+    existence_test = staticmethod(os.path.isdir)
+    name = 'directory'
 
     def post_validation(self, config, key_name):
 
@@ -237,6 +276,16 @@ class Dir(Type):
                 ("The '{0}' should not be the parent directory of the config "
                  "file. Use a child directory instead so that the config file "
                  "is a sibling of the config file.").format(key_name))
+
+
+class File(FilesystemObject):
+    """
+    File Config Option
+
+    Validate a path to a file, optionally verifying that it exists.
+    """
+    existence_test = staticmethod(os.path.isfile)
+    name = 'file'
 
 
 class SiteDir(Dir):
@@ -428,12 +477,11 @@ class Pages(Extras):
             return
 
         config_types = set(type(l) for l in value)
-        if config_types.issubset(set([utils.text_type, dict, str])):
+        if config_types.issubset({utils.text_type, dict, str}):
             return value
 
         raise ValidationError("Invalid pages config. {0} {1}".format(
-            config_types,
-            set([utils.text_type, dict, ])
+            config_types, {utils.text_type, dict}
         ))
 
     def post_validation(self, config, key_name):
@@ -539,21 +587,23 @@ class Plugins(OptionallyRequired):
         return plgins
 
     def load_plugin(self, name, config):
-        if name in self.installed_plugins:
-            Plugin = self.installed_plugins[name].load()
-            if issubclass(Plugin, plugins.BasePlugin):
-                plugin = Plugin()
-                errors, warnings = plugin.load_config(config)
-                self.warnings.extend(warnings)
-                for cfg_name, error in errors:
-                    # TODO: retain all errors if there are more than one
-                    raise ValidationError("Plugin value: '%s'. Error: %s", cfg_name, error)
-                return plugin
-            else:
-                raise ValidationError('{0}.{1} must be a subclass of '
-                                      '{2}.{3}'.format(Plugin.__module__,
-                                                       Plugin.__name__,
-                                                       plugins.BasePlugin.__module__,
-                                                       plugins.BasePlugin.__name__))
-        else:
+        if name not in self.installed_plugins:
             raise ValidationError('The "{0}" plugin is not installed'.format(name))
+
+        Plugin = self.installed_plugins[name].load()
+
+        if not issubclass(Plugin, plugins.BasePlugin):
+            raise ValidationError('{0}.{1} must be a subclass of {2}.{3}'.format(
+                Plugin.__module__, Plugin.__name__, plugins.BasePlugin.__module__,
+                plugins.BasePlugin.__name__))
+
+        plugin = Plugin()
+        errors, warnings = plugin.load_config(config)
+        self.warnings.extend(warnings)
+        errors_message = '\n'.join(
+            "Plugin value: '{}'. Error: {}".format(x, y)
+            for x, y in errors
+        )
+        if errors_message:
+            raise ValidationError(errors_message)
+        return plugin
