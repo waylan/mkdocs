@@ -47,9 +47,7 @@ documentation][rtd-docs] for details.
 
 #### Update `mkdocs` theme to Bootswatch 4.1.3 (#1563)
 
-The `mkdocs` theme now supports all the features of [Bootswatch 4.1]. Note that
-the [dropdowns] used in the navigation only support one level of nesting. If
-your global navigation uses more than one level, things will likely be broken.
+The `mkdocs` theme now supports all the features of [Bootswatch 4.1].
 Additionaly, 2 filenames were changed in this update. If you are using a theme
 which inherits from the `mkdocs` theme, the theme developer may need to update
 these filenames as follows.
@@ -58,7 +56,6 @@ these filenames as follows.
    js/bootstrap-3.0.3.min.js => js/bootstrap.min.js
 
 [Bootswatch 4.1]: https://getbootstrap.com/docs/4.1/getting-started/introduction/
-[dropdowns]: https://getbootstrap.com/docs/4.1/components/navs/#pills-with-dropdowns
 
 #### Improved configuration support on the command line (#1401)
 
@@ -70,12 +67,21 @@ do, adding `--strict`, `--theme`, `--theme-dir`, and `--site-dir`.
 
 [directory-urls]: ../user-guide/configuration.md#use_directory_urls
 
+#### Updated lunr-languages support (#1729)
+
+The `lunr-languages` plugin has been updated to 1.4.0, adding support for
+Arabic (`ar`) and Vietnamese (`vi`) languages. In addition, the Dutch and
+Japanese language codes have been changed to their standard values: `nl` and
+`ja`, respectively. The old language codes (`du` and `jp`) remain as aliases but
+may be removed in a future version of MkDocs.
+
 ### Other Changes and Additions to Version 1.1
 
 * Bugfix: Ensure nested dot files in themes are ignored and document behavior (#1981).
 * Update minimum dependancy to Markdown 3.0.1.
 * Updated minimum dependancy to Jinja 2.10.1 to address security
   concerns (#1780).
+* Update to lunr.js 2.3.8 (#1989).
 * Add support for Python 3.8.
 * Drop support for Python 3.4.
 * Drop support for Python 2.7. MkDocs is PY3 only now (#1926).
@@ -96,6 +102,9 @@ do, adding `--strict`, `--theme`, `--theme-dir`, and `--site-dir`.
   theme (#1234).
 * Bugfix: Multi-row nav headers in the `mkdocs` theme no longer obscure the
   document content (#716).
+* Add support for `navigation_depth` theme option for the `mkdocs` theme (#1970).
+* `level` attribute in `page.toc` items is now 1-indexed to match the level in
+  `<hN>` tags (#1970).
 
 ## Version 1.0.4 (2018-09-07)
 
