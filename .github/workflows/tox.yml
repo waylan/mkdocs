@@ -29,7 +29,8 @@ jobs:
             tox-env: py38
           - python-version: pypy3
             tox-env: pypy3
-
+    env:
+      TOXENV: ${{ matrix.tox-env }}-{unittests,min-req,integration}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -42,14 +43,14 @@ jobs:
           python -m pip install --upgrade pip tox coverage codecov
       - name: Run tox
         run: |
-          python -m tox -c tox.ini -e '${{ matrix.tox-env }}-{unittests,min-req,integration}'
+          python -m tox
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v1
         with:
           file: ./coverage.xml
           flags: unittests
-          name: ${{ matrix.os }}/Python${{ matrix.python-version }}
+          name: ${{ matrix.os }}/${{ matrix.tox-env }}
           fail_ci_if_error: false
 
   lint:
