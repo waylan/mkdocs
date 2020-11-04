@@ -18,6 +18,17 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: [3.5, 3.6, 3.7, 3.8, pypy3]
+        include:
+          - python-version: 3.5
+            tox-env: py35
+          - python-version: 3.6
+            tox-env: py36
+          - python-version: 3.7
+            tox-env: py37
+          - python-version: 3.8
+            tox-env: py38
+          - python-version: pypy3
+            tox-env: pypy3
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -30,7 +41,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip tox coverage codecov
       - name: Run tox
-        run: python -m tox -c tox.ini --skip-missing-interpreters true
+        run: |
+          python -m tox -c tox.ini -e '${{ matrix.envlist}}-{unittests,min-req,integration}'
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v1
