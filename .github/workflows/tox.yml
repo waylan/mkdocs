@@ -42,7 +42,7 @@ jobs:
           python -m pip install --upgrade pip tox coverage codecov
       - name: Run tox
         run: |
-          python -m tox -c tox.ini -e '${{ matrix.envlist}}-{unittests,min-req,integration}'
+          python -m tox -c tox.ini -e '${{ matrix.tox-env }}-{unittests,min-req,integration}'
       - name: Upload Codecov Results
         if: success()
         uses: codecov/codecov-action@v1
