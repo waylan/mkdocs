@@ -32,7 +32,7 @@ jobs:
           - py38-unittests
           - pypy3-integration
           - pypy3-min-req
-          - pypp3-unittests
+          - pypy3-unittests
         include:
           - tox-env: py35-integration
             python-version: 3.5
@@ -62,7 +62,7 @@ jobs:
             python-version: pypy3
           - tox-env: pypy3-min-req
             python-version: pypy3
-          - tox-env: pypp3-unittests
+          - tox-env: pypy3-unittests
             python-version: pypy3
     env:
       TOXENV: ${{ matrix.tox-env }}
@@ -92,14 +92,14 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        tox-env: [flake8, markdownlint, jslint, csslint]
+        tox-env: [flake8, markdown-lint, jshint, csslint]
         include:
           - tox-env: flake8
             node-deps: false
-          - tox-env: markdownlint
+          - tox-env: markdown-lint
             node-deps: markdownlint-cli
-          - tox_env: jslint
-            node-deps: jslint
+          - tox_env: jshint
+            node-deps: jshint
           - tox-env: csslint
             node-deps: csslint
     env:
