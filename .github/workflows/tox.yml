@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        tox-env: [flake8, markdown-lint, jshint, csslint]
+        # tox-env: [flake8, markdown-lint, jshint, csslint]
         include:
           - tox-env: flake8
             node-deps: ''
