@@ -32,7 +32,15 @@ markdown_extensions = [
 ]
 
 
-def yaml_load(source, loader=yaml.Loader):
+def deep_merge(parent, child):
+    """
+    Deep meerge to YAML objects
+    """
+    # TODO: Implement this properly
+    parent.update(child)
+    return parent
+
+def get_yaml_loader(loader=yaml.Loader):
     """
     Wrap PyYaml's loader so we can extend it to suit our needs.
 
@@ -61,8 +69,18 @@ def yaml_load(source, loader=yaml.Loader):
     # See https://github.com/waylan/pyyaml-env-tag
     Loader.add_constructor('!ENV', construct_env_tag)
 
+    return Loader
+
+
+def yaml_load(source, loader=None):
+    """
+    Load YAML data from source using specified loader.
+
+    Recursively load ancestor defined in `inherit` and deep merge.
+    """
+    loader = loader or get_yaml_loader()
     try:
-        return yaml.load(source, Loader)
+        data = yaml.load(source, loader)
     finally:
         # TODO: Remove this when external calls are properly cleaning up file
         # objects. Some mkdocs internal calls, sometimes in test lib, will
@@ -73,6 +91,18 @@ def yaml_load(source, loader=yaml.Loader):
         # file once we process the yaml content.
         if hasattr(source, 'close'):
             source.close()
+
+    if 'inherit' in data:
+        path = os.path.normpath(os.path.join(os.path.dirname(source.name), data['inherit']))
+        if os.path.isfile(path):
+            parent = yaml_load(path, loader)
+            data.pop('inherit')
+            data = deep_merge(parent, data)
+        else:
+            raise exceptions.ConfigurationError(
+                f"Config value: 'inherit'. Error: '{ path }' is not a valid file path."
+            )
+    return data
 
 
 def modified_time(file_path):
